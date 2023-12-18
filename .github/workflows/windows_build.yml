@@ -1,0 +1,53 @@
+name: Windows (Direct3D11)
+
+on: [push]
+
+jobs:
+  build-armorpaint:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Get Dependencies
+        run: |
+          git submodule update --init --recursive
+          cd armorcore/v8/libraries/win32/release/
+          7z e v8_monolith.7z
+
+      - name: Build ArmorPaint
+        run: |
+          cd armorpaint
+          ../armorcore/Kinc/make --from ../armorcore -g direct3d11 --compile
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ArmorPaint
+          path: |
+            armorcore/Deployment/ArmorPaint.exe
+            armorpaint/build/krom
+
+  build-armorlab:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Get Dependencies
+        run: |
+          git submodule update --init --recursive
+          cd armorcore/v8/libraries/win32/release/
+          7z e v8_monolith.7z
+
+      - name: Build
+        run: |
+          cd armorlab
+          git clone https://github.com/armory3d/onnx_bin onnx
+          ../armorcore/Kinc/make --from ../armorcore -g direct3d11 --compile
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ArmorLab
+          path: |
+            armorcore/Deployment/ArmorLab.exe
+            armorlab/build/krom
