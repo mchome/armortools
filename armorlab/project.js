@@ -3,13 +3,13 @@ let flags = globalThis.flags;
 flags.name = 'ArmorLab';
 flags.package = 'org.armorlab';
 flags.with_onnx = true;
-flags.with_plugin_embed = true;
 
 let project = new Project(flags.name);
 project.addDefine("is_lab");
 await project.addProject("../base");
 
 project.addSources("Sources");
+project.addSources("Sources/nodes");
 project.addShaders("Shaders/*.glsl", { embed: flags.snapshot });
 project.addAssets("Assets/*", { destination: "data/{name}", embed: flags.snapshot });
 project.addAssets("Assets/export_presets/*", { destination: "data/export_presets/{name}" });

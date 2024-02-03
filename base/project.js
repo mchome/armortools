@@ -7,8 +7,7 @@ flags.vulkan = process.argv.indexOf("vulkan") >= 0;
 flags.metal = process.argv.indexOf("metal") >= 0;
 flags.raytrace = flags.d3d12 || flags.vulkan || flags.metal;
 flags.snapshot = process.argv.indexOf("--snapshot") >= 0;
-flags.plugin_embed = flags.ios;
-flags.physics = !flags.ios;
+flags.physics = true;
 flags.voxels = !flags.raytrace && !flags.android && !flags.ios;
 
 flags.with_d3dcompiler = true;
@@ -27,9 +26,6 @@ flags.on_c_project_created = async function(c_project, platform, graphics) {
 	if (graphics === "vulkan") {
 		c_project.addDefine("KORE_VKRT");
 		await c_project.addProject("../" + dir + "/glsl_to_spirv");
-	}
-	if (platform === "ios") {
-		flags.with_plugin_embed = true;
 	}
 
 	if (flags.with_onnx) {
@@ -56,13 +52,12 @@ flags.on_c_project_created = async function(c_project, platform, graphics) {
 		}
 	}
 
-	if (flags.with_plugin_embed) {
-		await c_project.addProject("../" + dir + "/Plugins");
-	}
+	await c_project.addProject("../" + dir + "/Plugins");
 };
 
 let project = new Project("Base");
 project.addSources("Sources");
+project.addSources("Sources/nodes");
 project.addShaders("../armorcore/Shaders/*.glsl", { embed: flags.snapshot });
 project.addShaders("Shaders/*.glsl", { embed: flags.snapshot });
 project.addAssets("Assets/*", { destination: "data/{name}", embed: flags.snapshot });
@@ -75,17 +70,12 @@ if (flags.snapshot) {
 	project.addDefine("arm_snapshot");
 	project.addDefine("arm_image_embed");
 	project.addDefine("arm_shader_embed");
-	project.addParameter("--no-traces");
 }
 else {
 	project.addDefine("arm_noembed");
 	project.addAssets("Assets/extra/*", { destination: "data/{name}" });
 }
 
-project.addParameter("--macro include('arm.nodes')");
-project.addParameter("-dce full");
-project.addDefine("analyzer-optimize");
-project.addDefine("js-es=6");
 project.addDefine("arm_particles");
 // project.addDefine("arm_skin");
 // project.addDefine("arm_audio");
@@ -122,12 +112,14 @@ if (flags.voxels) {
 let export_version_info = true;
 if (export_version_info) {
 	const fs = require("fs");
-	let dir = "../" + flags.name.toLowerCase() + "/build/krom/data";
+	let dir = "../" + flags.name.toLowerCase() + "/build";
 	let sha = require("child_process").execSync(`git log --pretty=format:"%h" -n 1`).toString().substr(1, 7);
 	let date = new Date().toISOString().split("T")[0];
 	let data = `{ "sha": "${sha}", "date": "${date}" }`;
 	fs.ensureDirSync(dir);
 	fs.writeFileSync(dir + "/version.json", data);
+	// Adds version.json to embed.txt list
+	project.addAssets(dir + "/version.json", { destination: "data/{name}", embed: flags.snapshot });
 }
 
 resolve(project);

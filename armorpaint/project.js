@@ -8,6 +8,7 @@ project.addDefine("is_paint");
 await project.addProject("../base");
 
 project.addSources("Sources");
+project.addSources("Sources/nodes");
 project.addShaders("Shaders/*.glsl", { embed: flags.snapshot });
 project.addAssets("Assets/*", { destination: "data/{name}", embed: flags.snapshot });
 project.addAssets("Assets/export_presets/*", { destination: "data/export_presets/{name}" });
@@ -24,16 +25,9 @@ else if (flags.ios) {
 	project.addAssets("Assets/readme/readme_ios.txt", { destination: "{name}" });
 }
 
-if (flags.plugin_embed) {
-	project.addAssets("Assets/plugins/embed/*", { destination: "data/plugins/{name}" });
-}
-else {
-	project.addAssets("Assets/plugins/wasm/*", { destination: "data/plugins/{name}" });
-}
-
 if (flags.physics) {
 	project.addDefine("arm_physics");
-	project.addAssets("Assets/plugins/wasm/ammo/*", { destination: "data/plugins/{name}" });
+	project.addAssets("Assets/plugins/ammo/*", { destination: "data/plugins/{name}" });
 }
 
 if (flags.raytrace) {
