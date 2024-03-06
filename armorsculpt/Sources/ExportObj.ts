@@ -7,12 +7,12 @@ class ExportObj {
 		}
 	}
 
-	static run = (path: string, paintObjects: TMeshObject[], applyDisplacement = false) => {
+	static run = (path: string, paintObjects: mesh_object_t[], applyDisplacement = false) => {
 		let o: i32[] = [];
 		ExportObj.writeString(o, "# armorsculpt.org\n");
 
 		let texpaint = Project.layers[0].texpaint;
-		let pixels = texpaint.getPixels();
+		let pixels = image_get_pixels(texpaint);
 		let pixelsView = new DataView(pixels);
 		let mesh = paintObjects[0].data;
 		let inda = mesh.index_arrays[0].values;
@@ -93,6 +93,6 @@ class ExportObj {
 		if (!path.endsWith(".obj")) path += ".obj";
 
 		let b = Uint8Array.from(o).buffer;
-		Krom.fileSaveBytes(path, b, b.byteLength);
+		krom_file_save_bytes(path, b, b.byteLength);
 	}
 }

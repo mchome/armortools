@@ -10,21 +10,18 @@ class Config {
 
 	static load = (done: ()=>void) => {
 		try {
-			Data.getBlob((Path.isProtected() ? Krom.savePath() : "") + "config.json", (blob: ArrayBuffer) => {
-				Config.configLoaded = true;
-				Config.raw = JSON.parse(System.bufferToString(blob));
-
-				done();
-			});
+			let blob: ArrayBuffer = data_get_blob((Path.isProtected() ? krom_save_path() : "") + "config.json");
+			Config.configLoaded = true;
+			Config.raw = JSON.parse(sys_buffer_to_string(blob));
+			done();
 		}
 		catch (e: any) {
 			///if krom_linux
 			try { // Protected directory
-				Data.getBlob(Krom.savePath() + "config.json", (blob: ArrayBuffer) => {
-					Config.configLoaded = true;
-					Config.raw = JSON.parse(System.bufferToString(blob));
-					done();
-				});
+				let blob: ArrayBuffer = data_get_blob(krom_save_path() + "config.json");
+				Config.configLoaded = true;
+				Config.raw = JSON.parse(sys_buffer_to_string(blob));
+				done();
 			}
 			catch (e: any) {
 				done();
@@ -38,12 +35,12 @@ class Config {
 	static save = () => {
 		// Use system application data folder
 		// when running from protected path like "Program Files"
-		let path = (Path.isProtected() ? Krom.savePath() : Path.data() + Path.sep) + "config.json";
-		let buffer = System.stringToBuffer(JSON.stringify(Config.raw));
-		Krom.fileSaveBytes(path, buffer);
+		let path = (Path.isProtected() ? krom_save_path() : Path.data() + Path.sep) + "config.json";
+		let buffer = sys_string_to_buffer(JSON.stringify(Config.raw));
+		krom_file_save_bytes(path, buffer);
 
 		///if krom_linux // Protected directory
-		if (!File.exists(path)) Krom.fileSaveBytes(Krom.savePath() + "config.json", buffer);
+		if (!File.exists(path)) krom_file_save_bytes(krom_save_path() + "config.json", buffer);
 		///end
 	}
 
@@ -64,14 +61,14 @@ class Config {
 			Config.raw.window_x = -1;
 			Config.raw.window_y = -1;
 			Config.raw.window_scale = 1.0;
-			if (System.displayWidth() >= 2560 && System.displayHeight() >= 1600) {
+			if (sys_display_width() >= 2560 && sys_display_height() >= 1600) {
 				Config.raw.window_scale = 2.0;
 			}
 			///if (krom_android || krom_ios || krom_darwin)
 			Config.raw.window_scale = 2.0;
 			///end
 			Config.raw.window_vsync = true;
-			Config.raw.window_frequency = System.displayFrequency();
+			Config.raw.window_frequency = sys_display_frequency();
 			Config.raw.rp_bloom = false;
 			Config.raw.rp_gi = false;
 			Config.raw.rp_vignette = 0.2;
@@ -101,33 +98,33 @@ class Config {
 			}
 		}
 
-		Zui.touchScroll = Zui.touchHold = Zui.touchTooltip = Config.raw.touch_ui;
+		zui_set_touch_scroll(Config.raw.touch_ui);
+		zui_set_touch_hold(Config.raw.touch_ui);
+		zui_set_touch_tooltip(Config.raw.touch_ui);
 		Base.resHandle.position = Config.raw.layer_res;
 		Config.loadKeymap();
 	}
 
 	static getSha = (): string => {
 		let sha = "";
-		Data.getBlob("version.json", (blob: ArrayBuffer) => {
-			sha = JSON.parse(System.bufferToString(blob)).sha;
-		});
+		let blob: ArrayBuffer = data_get_blob("version.json");
+		sha = JSON.parse(sys_buffer_to_string(blob)).sha;
 		return sha;
 	}
 
 	static getDate = (): string => {
 		let date = "";
-		Data.getBlob("version.json", (blob: ArrayBuffer) => {
-			date = JSON.parse(System.bufferToString(blob)).date;
-		});
+		let blob: ArrayBuffer = data_get_blob("version.json");
+		date = JSON.parse(sys_buffer_to_string(blob)).date;
 		return date;
 	}
 
-	static getOptions = (): SystemOptions => {
-		let windowMode = Config.raw.window_mode == 0 ? WindowMode.Windowed : WindowMode.Fullscreen;
-		let windowFeatures = WindowFeatures.FeatureNone;
-		if (Config.raw.window_resizable) windowFeatures |= WindowFeatures.FeatureResizable;
-		if (Config.raw.window_maximizable) windowFeatures |= WindowFeatures.FeatureMaximizable;
-		if (Config.raw.window_minimizable) windowFeatures |= WindowFeatures.FeatureMinimizable;
+	static getOptions = (): kinc_sys_ops_t => {
+		let windowMode = Config.raw.window_mode == 0 ? window_mode_t.WINDOWED : window_mode_t.FULLSCREEN;
+		let windowFeatures = window_features_t.NONE;
+		if (Config.raw.window_resizable) windowFeatures |= window_features_t.RESIZABLE;
+		if (Config.raw.window_maximizable) windowFeatures |= window_features_t.MAXIMIZABLE;
+		if (Config.raw.window_minimizable) windowFeatures |= window_features_t.MINIMIZABLE;
 		let title = "untitled - " + manifest_title;
 		return {
 			title: title,
@@ -143,7 +140,7 @@ class Config {
 	}
 
 	static restore = () => {
-		Zui.children = new Map(); // Reset ui handles
+		zui_children = new Map(); // Reset ui handles
 		Config.configLoaded = false;
 		let _layout = Config.raw.layout;
 		Config.init();
@@ -160,7 +157,7 @@ class Config {
 		Config.raw = from;
 		Config.raw.sha = _sha;
 		Config.raw.version = _version;
-		Zui.children = new Map(); // Reset ui handles
+		zui_children = new Map(); // Reset ui handles
 		Config.loadKeymap();
 		Base.initLayout();
 		Translator.loadTranslations(Config.raw.locale);
@@ -177,10 +174,10 @@ class Config {
 		Config.save();
 		Context.raw.ddirty = 2;
 
-		let current = Graphics2.current;
-		if (current != null) current.end();
+		let current = _g2_current;
+		if (current != null) g2_end();
 		RenderPathBase.applyConfig();
-		if (current != null) current.begin(false);
+		if (current != null) g2_begin(current);
 	}
 
 	static loadKeymap = () => {
@@ -188,24 +185,23 @@ class Config {
 			Config.keymap = Base.defaultKeymap;
 		}
 		else {
-			Data.getBlob("keymap_presets/" + Config.raw.keymap, (blob: ArrayBuffer) => {
-				Config.keymap = JSON.parse(System.bufferToString(blob));
-				// Fill in undefined keys with defaults
-				for (let field in Base.defaultKeymap) {
-					if (!(field in Config.keymap)) {
-						let adefaultKeymap: any = Base.defaultKeymap;
-						Config.keymap[field] = adefaultKeymap[field];
-					}
+			let blob: ArrayBuffer = data_get_blob("keymap_presets/" + Config.raw.keymap);
+			Config.keymap = JSON.parse(sys_buffer_to_string(blob));
+			// Fill in undefined keys with defaults
+			for (let field in Base.defaultKeymap) {
+				if (!(field in Config.keymap)) {
+					let adefaultKeymap: any = Base.defaultKeymap;
+					Config.keymap[field] = adefaultKeymap[field];
 				}
-			});
+			}
 		}
 	}
 
 	static saveKeymap = () => {
 		if (Config.raw.keymap == "default.json") return;
-		let path = Data.dataPath + "keymap_presets/" + Config.raw.keymap;
-		let buffer = System.stringToBuffer(JSON.stringify(Config.keymap));
-		Krom.fileSaveBytes(path, buffer);
+		let path = data_path() + "keymap_presets/" + Config.raw.keymap;
+		let buffer = sys_string_to_buffer(JSON.stringify(Config.keymap));
+		krom_file_save_bytes(path, buffer);
 	}
 
 	static getSuperSampleQuality = (f: f32): i32 => {
@@ -269,20 +265,19 @@ class Config {
 
 	static loadTheme = (theme: string, tagRedraw = true) => {
 		if (theme == "default.json") { // Built-in default
-			Base.theme = new Theme();
+			Base.theme = zui_theme_create();
 		}
 		else {
-			Data.getBlob("themes/" + theme, (b: ArrayBuffer) => {
-				let parsed = JSON.parse(System.bufferToString(b));
-				Base.theme = new Theme();
-				for (let key in Base.theme) {
-					if (key == "theme_") continue;
-					if (key.startsWith("set_")) continue;
-					if (key.startsWith("get_")) key = key.substr(4);
-					let atheme: any = Base.theme;
-					atheme[key] = parsed[key];
-				}
-			});
+			let b: ArrayBuffer = data_get_blob("themes/" + theme);
+			let parsed = JSON.parse(sys_buffer_to_string(b));
+			Base.theme = zui_theme_create();
+			for (let key in Base.theme) {
+				if (key == "theme_") continue;
+				if (key.startsWith("set_")) continue;
+				if (key.startsWith("get_")) key = key.substr(4);
+				let atheme: any = Base.theme;
+				atheme[key] = parsed[key];
+			}
 		}
 		Base.theme.FILL_WINDOW_BG = true;
 		if (tagRedraw) {

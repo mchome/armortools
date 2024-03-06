@@ -42,7 +42,7 @@ class Translator {
 	// (Re)loads translations for the specified locale
 	static loadTranslations = (newLocale: string) => {
 		if (newLocale == "system") {
-			Config.raw.locale = Krom.language();
+			Config.raw.locale = krom_language();
 		}
 
 		// Check whether the requested or detected locale is available
@@ -63,7 +63,7 @@ class Translator {
 
 		if (Config.raw.locale != "en") {
 			// Load the translation file
-			let translationJson = System.bufferToString(Krom.loadBlob(`data/locale/${Config.raw.locale}.json`));
+			let translationJson = sys_buffer_to_string(krom_load_blob(`data/locale/${Config.raw.locale}.json`));
 
 			let data = JSON.parse(translationJson);
 			for (let field in data) {
@@ -80,19 +80,19 @@ class Translator {
 		for (let s of Translator.translations.values()) {
 			for (let i = 0; i < s.length; ++i) {
 				// Assume cjk in the > 1119 range for now
-				if (s.charCodeAt(i) > 1119 && Graphics2.fontGlyphs.indexOf(s.charCodeAt(i)) == -1) {
+				if (s.charCodeAt(i) > 1119 && _g2_font_glyphs.indexOf(s.charCodeAt(i)) == -1) {
 					if (!cjk) {
-						Graphics2.fontGlyphs = Graphics2.makeGlyphs(32, 127);
+						_g2_font_glyphs = _g2_make_glyphs(32, 127);
 						cjk = true;
 					}
-					Graphics2.fontGlyphs.push(s.charCodeAt(i));
+					_g2_font_glyphs.push(s.charCodeAt(i));
 				}
 			}
 		}
 
 		if (cjk) {
-			let cjkFontPath = (Path.isProtected() ? Krom.savePath() : "") + "font_cjk.ttc";
-			let cjkFontDiskPath = (Path.isProtected() ? Krom.savePath() : Path.data() + Path.sep) + "font_cjk.ttc";
+			let cjkFontPath = (Path.isProtected() ? krom_save_path() : "") + "font_cjk.ttc";
+			let cjkFontDiskPath = (Path.isProtected() ? krom_save_path() : Path.data() + Path.sep) + "font_cjk.ttc";
 			if (!File.exists(cjkFontDiskPath)) {
 				File.download("https://github.com/armory3d/armorbase/raw/main/Assets/common/extra/font_cjk.ttc", cjkFontDiskPath, () => {
 					if (!File.exists(cjkFontDiskPath)) {
@@ -111,35 +111,34 @@ class Translator {
 	}
 
 	static initFont = (cjk: bool, fontPath: string, fontScale: f32) => {
-		Graphics2.fontGlyphs.sort((a: i32, b: i32) => { return a - b; });
+		_g2_font_glyphs.sort((a: i32, b: i32) => { return a - b; });
 		// Load and assign font with cjk characters
-		App.notifyOnInit(() => {
-			Data.getFont(fontPath, (f: Font) => {
-				if (cjk) {
-					let acjkFontIndices = Translator.cjkFontIndices as any;
-					let fontIndex = Translator.cjkFontIndices.has(Config.raw.locale) ? acjkFontIndices[Config.raw.locale] : 0;
-					f.setFontIndex(fontIndex);
-				}
-				Base.font = f;
-				// Scale up the font size and elements width a bit
-				Base.theme.FONT_SIZE = Math.floor(Base.defaultFontSize * fontScale);
-				Base.theme.ELEMENT_W = Math.floor(Base.defaultElementW * (Config.raw.locale != "en" ? 1.4 : 1.0));
-				let uis = Base.getUIs();
-				for (let ui of uis) {
-					ui.setFont(f);
-					ui.setScale(ui.SCALE());
-				}
-			});
+		app_notify_on_init(() => {
+			let f: g2_font_t = data_get_font(fontPath);
+			if (cjk) {
+				let acjkFontIndices = Translator.cjkFontIndices as any;
+				let fontIndex = Translator.cjkFontIndices.has(Config.raw.locale) ? acjkFontIndices[Config.raw.locale] : 0;
+				g2_font_set_font_index(f, fontIndex);
+			}
+			Base.font = f;
+			// Scale up the font size and elements width a bit
+			Base.theme.FONT_SIZE = Math.floor(Base.defaultFontSize * fontScale);
+			Base.theme.ELEMENT_W = Math.floor(Base.defaultElementW * (Config.raw.locale != "en" ? 1.4 : 1.0));
+			let uis = Base.getUIs();
+			for (let ui of uis) {
+				zui_set_font(ui, f);
+				zui_set_scale(ui, zui_SCALE(ui));
+			}
 		});
 	}
 
 	static extendedGlyphs = () => {
 		// Basic Latin + Latin-1 Supplement + Latin Extended-A
-		Graphics2.fontGlyphs = Graphics2.makeGlyphs(32, 383);
+		_g2_font_glyphs = _g2_make_glyphs(32, 383);
 		// + Greek
-		for (let i = 880; i < 1023; ++i) Graphics2.fontGlyphs.push(i);
+		for (let i = 880; i < 1023; ++i) _g2_font_glyphs.push(i);
 		// + Cyrillic
-		for (let i = 1024; i < 1119; ++i) Graphics2.fontGlyphs.push(i);
+		for (let i = 1024; i < 1119; ++i) _g2_font_glyphs.push(i);
 	}
 
 	// Returns a list of supported locales (plus English and the automatically detected system locale)

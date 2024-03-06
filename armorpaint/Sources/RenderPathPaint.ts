@@ -7,100 +7,100 @@ class RenderPathPaint {
 	static dilated = true;
 	static initVoxels = true; // Bake AO
 	static pushUndoLast: bool;
-	static painto: TMeshObject = null;
-	static planeo: TMeshObject = null;
+	static painto: mesh_object_t = null;
+	static planeo: mesh_object_t = null;
 	static visibles: bool[] = null;
 	static mergedObjectVisible = false;
 	static savedFov = 0.0;
 	static baking = false;
-	static _texpaint: RenderTarget;
-	static _texpaint_nor: RenderTarget;
-	static _texpaint_pack: RenderTarget;
-	static _texpaint_undo: RenderTarget;
-	static _texpaint_nor_undo: RenderTarget;
-	static _texpaint_pack_undo: RenderTarget;
+	static _texpaint: render_target_t;
+	static _texpaint_nor: render_target_t;
+	static _texpaint_pack: render_target_t;
+	static _texpaint_undo: render_target_t;
+	static _texpaint_nor_undo: render_target_t;
+	static _texpaint_pack_undo: render_target_t;
 	static lastX = -1.0;
 	static lastY = -1.0;
 
 	static init = () => {
 
 		{
-			let t = new RenderTargetRaw();
+			let t = render_target_create();
 			t.name = "texpaint_blend0";
 			t.width = Config.getTextureResX();
 			t.height = Config.getTextureResY();
 			t.format = "R8";
-			RenderPath.createRenderTarget(t);
+			render_path_create_render_target(t);
 		}
 		{
-			let t = new RenderTargetRaw();
+			let t = render_target_create();
 			t.name = "texpaint_blend1";
 			t.width = Config.getTextureResX();
 			t.height = Config.getTextureResY();
 			t.format = "R8";
-			RenderPath.createRenderTarget(t);
+			render_path_create_render_target(t);
 		}
 		{
-			let t = new RenderTargetRaw();
+			let t = render_target_create();
 			t.name = "texpaint_colorid";
 			t.width = 1;
 			t.height = 1;
 			t.format = "RGBA32";
-			RenderPath.createRenderTarget(t);
+			render_path_create_render_target(t);
 		}
 		{
-			let t = new RenderTargetRaw();
+			let t = render_target_create();
 			t.name = "texpaint_picker";
 			t.width = 1;
 			t.height = 1;
 			t.format = "RGBA32";
-			RenderPath.createRenderTarget(t);
+			render_path_create_render_target(t);
 		}
 		{
-			let t = new RenderTargetRaw();
+			let t = render_target_create();
 			t.name = "texpaint_nor_picker";
 			t.width = 1;
 			t.height = 1;
 			t.format = "RGBA32";
-			RenderPath.createRenderTarget(t);
+			render_path_create_render_target(t);
 		}
 		{
-			let t = new RenderTargetRaw();
+			let t = render_target_create();
 			t.name = "texpaint_pack_picker";
 			t.width = 1;
 			t.height = 1;
 			t.format = "RGBA32";
-			RenderPath.createRenderTarget(t);
+			render_path_create_render_target(t);
 		}
 		{
-			let t = new RenderTargetRaw();
+			let t = render_target_create();
 			t.name = "texpaint_uv_picker";
 			t.width = 1;
 			t.height = 1;
 			t.format = "RGBA32";
-			RenderPath.createRenderTarget(t);
+			render_path_create_render_target(t);
 		}
 		{
-			let t = new RenderTargetRaw();
+			let t = render_target_create();
 			t.name = "texpaint_posnortex_picker0";
 			t.width = 1;
 			t.height = 1;
 			t.format = "RGBA128";
-			RenderPath.createRenderTarget(t);
+			render_path_create_render_target(t);
 		}
 		{
-			let t = new RenderTargetRaw();
+			let t = render_target_create();
 			t.name = "texpaint_posnortex_picker1";
 			t.width = 1;
 			t.height = 1;
 			t.format = "RGBA128";
-			RenderPath.createRenderTarget(t);
+			render_path_create_render_target(t);
 		}
 
-		RenderPath.loadShader("shader_datas/copy_mrt3_pass/copy_mrt3_pass");
-		RenderPath.loadShader("shader_datas/copy_mrt3_pass/copy_mrt3RGBA64_pass");
+		render_path_load_shader("shader_datas/copy_mrt3_pass/copy_mrt3_pass");
+		render_path_load_shader("shader_datas/copy_mrt3_pass/copy_mrt3RGBA64_pass");
 		///if is_paint
-		RenderPath.loadShader("shader_datas/dilate_pass/dilate_pass");
+		render_path_load_shader("shader_datas/dilate_pass/dilate_pass");
 		///end
 	}
 
@@ -114,47 +114,47 @@ class RenderPathPaint {
 			let particlePhysics = false;
 			///end
 			if (Context.raw.tool == WorkspaceTool.ToolParticle && !particlePhysics) {
-				RenderPath.setTarget("texparticle");
-				RenderPath.clearTarget(0x00000000);
-				RenderPath.bindTarget("_main", "gbufferD");
+				render_path_set_target("texparticle");
+				render_path_clear_target(0x00000000);
+				render_path_bind_target("_main", "gbufferD");
 				if ((Context.raw.xray || Config.raw.brush_angle_reject) && Config.raw.brush_3d) {
-					RenderPath.bindTarget("gbuffer0", "gbuffer0");
+					render_path_bind_target("gbuffer0", "gbuffer0");
 				}
 
-				let mo: TMeshObject = Scene.getChild(".ParticleEmitter").ext;
+				let mo: mesh_object_t = scene_get_child(".ParticleEmitter").ext;
 				mo.base.visible = true;
-				MeshObject.render(mo, RenderPath.currentG, "mesh", RenderPath.bindParams);
+				mesh_object_render(mo, "mesh",_render_path_bind_params);
 				mo.base.visible = false;
 
-				mo = Scene.getChild(".Particle").ext;
+				mo = scene_get_child(".Particle").ext;
 				mo.base.visible = true;
-				MeshObject.render(mo, RenderPath.currentG, "mesh", RenderPath.bindParams);
+				mesh_object_render(mo, "mesh",_render_path_bind_params);
 				mo.base.visible = false;
-				RenderPath.end();
+				render_path_end();
 			}
 
 			///if is_paint
 			if (Context.raw.tool == WorkspaceTool.ToolColorId) {
-				RenderPath.setTarget("texpaint_colorid");
-				RenderPath.clearTarget(0xff000000);
-				RenderPath.bindTarget("gbuffer2", "gbuffer2");
-				RenderPath.drawMeshes("paint");
+				render_path_set_target("texpaint_colorid");
+				render_path_clear_target(0xff000000);
+				render_path_bind_target("gbuffer2", "gbuffer2");
+				render_path_draw_meshes("paint");
 				UIHeader.headerHandle.redraws = 2;
 			}
 			else if (Context.raw.tool == WorkspaceTool.ToolPicker || Context.raw.tool == WorkspaceTool.ToolMaterial) {
 				if (Context.raw.pickPosNorTex) {
 					if (Context.raw.paint2d) {
-						RenderPath.setTarget("gbuffer0", ["gbuffer1", "gbuffer2"]);
-						RenderPath.drawMeshes("mesh");
+						render_path_set_target("gbuffer0", ["gbuffer1", "gbuffer2"]);
+						render_path_draw_meshes("mesh");
 					}
-					RenderPath.setTarget("texpaint_posnortex_picker0", ["texpaint_posnortex_picker1"]);
-					RenderPath.bindTarget("gbuffer2", "gbuffer2");
-					RenderPath.bindTarget("_main", "gbufferD");
-					RenderPath.drawMeshes("paint");
-					let texpaint_posnortex_picker0 = RenderPath.renderTargets.get("texpaint_posnortex_picker0").image;
-					let texpaint_posnortex_picker1 = RenderPath.renderTargets.get("texpaint_posnortex_picker1").image;
-					let a = new DataView(texpaint_posnortex_picker0.getPixels());
-					let b = new DataView(texpaint_posnortex_picker1.getPixels());
+					render_path_set_target("texpaint_posnortex_picker0", ["texpaint_posnortex_picker1"]);
+					render_path_bind_target("gbuffer2", "gbuffer2");
+					render_path_bind_target("_main", "gbufferD");
+					render_path_draw_meshes("paint");
+					let texpaint_posnortex_picker0 = render_path_render_targets.get("texpaint_posnortex_picker0")._image;
+					let texpaint_posnortex_picker1 = render_path_render_targets.get("texpaint_posnortex_picker1")._image;
+					let a = new DataView(image_get_pixels(texpaint_posnortex_picker0));
+					let b = new DataView(image_get_pixels(texpaint_posnortex_picker1));
 					Context.raw.posXPicked = a.getFloat32(0, true);
 					Context.raw.posYPicked = a.getFloat32(4, true);
 					Context.raw.posZPicked = a.getFloat32(8, true);
@@ -165,27 +165,27 @@ class RenderPathPaint {
 					Context.raw.uvyPicked = b.getFloat32(12, true);
 				}
 				else {
-					RenderPath.setTarget("texpaint_picker", ["texpaint_nor_picker", "texpaint_pack_picker", "texpaint_uv_picker"]);
-					RenderPath.bindTarget("gbuffer2", "gbuffer2");
+					render_path_set_target("texpaint_picker", ["texpaint_nor_picker", "texpaint_pack_picker", "texpaint_uv_picker"]);
+					render_path_bind_target("gbuffer2", "gbuffer2");
 					tid = Context.raw.layer.id;
 					let useLiveLayer = Context.raw.tool == WorkspaceTool.ToolMaterial;
 					if (useLiveLayer) RenderPathPaint.useLiveLayer(true);
-					RenderPath.bindTarget("texpaint" + tid, "texpaint");
-					RenderPath.bindTarget("texpaint_nor" + tid, "texpaint_nor");
-					RenderPath.bindTarget("texpaint_pack" + tid, "texpaint_pack");
-					RenderPath.drawMeshes("paint");
+					render_path_bind_target("texpaint" + tid, "texpaint");
+					render_path_bind_target("texpaint_nor" + tid, "texpaint_nor");
+					render_path_bind_target("texpaint_pack" + tid, "texpaint_pack");
+					render_path_draw_meshes("paint");
 					if (useLiveLayer) RenderPathPaint.useLiveLayer(false);
 					UIHeader.headerHandle.redraws = 2;
 					UIBase.hwnds[2].redraws = 2;
 
-					let texpaint_picker = RenderPath.renderTargets.get("texpaint_picker").image;
-					let texpaint_nor_picker = RenderPath.renderTargets.get("texpaint_nor_picker").image;
-					let texpaint_pack_picker = RenderPath.renderTargets.get("texpaint_pack_picker").image;
-					let texpaint_uv_picker = RenderPath.renderTargets.get("texpaint_uv_picker").image;
-					let a = new DataView(texpaint_picker.getPixels());
-					let b = new DataView(texpaint_nor_picker.getPixels());
-					let c = new DataView(texpaint_pack_picker.getPixels());
-					let d = new DataView(texpaint_uv_picker.getPixels());
+					let texpaint_picker = render_path_render_targets.get("texpaint_picker")._image;
+					let texpaint_nor_picker = render_path_render_targets.get("texpaint_nor_picker")._image;
+					let texpaint_pack_picker = render_path_render_targets.get("texpaint_pack_picker")._image;
+					let texpaint_uv_picker = render_path_render_targets.get("texpaint_uv_picker")._image;
+					let a = new DataView(image_get_pixels(texpaint_picker));
+					let b = new DataView(image_get_pixels(texpaint_nor_picker));
+					let c = new DataView(image_get_pixels(texpaint_pack_picker));
+					let d = new DataView(image_get_pixels(texpaint_uv_picker));
 
 					if (Context.raw.colorPickerCallback != null) {
 						Context.raw.colorPickerCallback(Context.raw.pickedColor);
@@ -239,25 +239,25 @@ class RenderPathPaint {
 						RenderPathBase.initVoxels();
 						Config.raw.rp_gi = _rp_gi;
 					}
-					RenderPath.clearImage("voxels", 0x00000000);
-					RenderPath.setTarget("");
-					RenderPath.setViewport(256, 256);
-					RenderPath.bindTarget("voxels", "voxels");
-					RenderPath.drawMeshes("voxel");
-					RenderPath.generateMipmaps("voxels");
+					render_path_clear_image("voxels", 0x00000000);
+					render_path_set_target("");
+					render_path_set_viewport(256, 256);
+					render_path_bind_target("voxels", "voxels");
+					render_path_draw_meshes("voxel");
+					render_path_gen_mipmaps("voxels");
 				}
 				///end
 
 				let texpaint = "texpaint" + tid;
-				if (Context.raw.tool == WorkspaceTool.ToolBake && Context.raw.brushTime == Time.delta) {
+				if (Context.raw.tool == WorkspaceTool.ToolBake && Context.raw.brushTime == time_delta()) {
 					// Clear to black on bake start
-					RenderPath.setTarget(texpaint);
-					RenderPath.clearTarget(0xff000000);
+					render_path_set_target(texpaint);
+					render_path_clear_target(0xff000000);
 				}
 
-				RenderPath.setTarget("texpaint_blend1");
-				RenderPath.bindTarget("texpaint_blend0", "tex");
-				RenderPath.drawShader("shader_datas/copy_pass/copyR8_pass");
+				render_path_set_target("texpaint_blend1");
+				render_path_bind_target("texpaint_blend0", "tex");
+				render_path_draw_shader("shader_datas/copy_pass/copyR8_pass");
 				let isMask = SlotLayer.isMask(Context.raw.layer);
 				if (isMask) {
 					let ptid = Context.raw.layer.parent.id;
@@ -267,23 +267,23 @@ class RenderPathPaint {
 							break;
 						}
 					}
-					RenderPath.setTarget(texpaint, ["texpaint_nor" + ptid, "texpaint_pack" + ptid, "texpaint_blend0"]);
+					render_path_set_target(texpaint, ["texpaint_nor" + ptid, "texpaint_pack" + ptid, "texpaint_blend0"]);
 				}
 				else {
-					RenderPath.setTarget(texpaint, ["texpaint_nor" + tid, "texpaint_pack" + tid, "texpaint_blend0"]);
+					render_path_set_target(texpaint, ["texpaint_nor" + tid, "texpaint_pack" + tid, "texpaint_blend0"]);
 				}
-				RenderPath.bindTarget("_main", "gbufferD");
+				render_path_bind_target("_main", "gbufferD");
 				if ((Context.raw.xray || Config.raw.brush_angle_reject) && Config.raw.brush_3d) {
-					RenderPath.bindTarget("gbuffer0", "gbuffer0");
+					render_path_bind_target("gbuffer0", "gbuffer0");
 				}
-				RenderPath.bindTarget("texpaint_blend1", "paintmask");
+				render_path_bind_target("texpaint_blend1", "paintmask");
 				///if arm_voxels
 				if (Context.raw.tool == WorkspaceTool.ToolBake && Context.raw.bakeType == BakeType.BakeAO) {
-					RenderPath.bindTarget("voxels", "voxels");
+					render_path_bind_target("voxels", "voxels");
 				}
 				///end
 				if (Context.raw.colorIdPicked) {
-					RenderPath.bindTarget("texpaint_colorid", "texpaint_colorid");
+					render_path_bind_target("texpaint_colorid", "texpaint_colorid");
 				}
 
 				// Read texcoords from gbuffer
@@ -292,28 +292,28 @@ class RenderPathPaint {
 							  Context.raw.tool == WorkspaceTool.ToolBlur ||
 							  Context.raw.tool == WorkspaceTool.ToolSmudge;
 				if (readTC) {
-					RenderPath.bindTarget("gbuffer2", "gbuffer2");
+					render_path_bind_target("gbuffer2", "gbuffer2");
 				}
 
-				RenderPath.drawMeshes("paint");
+				render_path_draw_meshes("paint");
 
 				if (Context.raw.tool == WorkspaceTool.ToolBake && Context.raw.bakeType == BakeType.BakeCurvature && Context.raw.bakeCurvSmooth > 0) {
-					if (RenderPath.renderTargets.get("texpaint_blur") == null) {
-						let t = new RenderTargetRaw();
+					if (render_path_render_targets.get("texpaint_blur") == null) {
+						let t = render_target_create();
 						t.name = "texpaint_blur";
 						t.width = Math.floor(Config.getTextureResX() * 0.95);
 						t.height = Math.floor(Config.getTextureResY() * 0.95);
 						t.format = "RGBA32";
-						RenderPath.createRenderTarget(t);
+						render_path_create_render_target(t);
 					}
 					let blurs = Math.round(Context.raw.bakeCurvSmooth);
 					for (let i = 0; i < blurs; ++i) {
-						RenderPath.setTarget("texpaint_blur");
-						RenderPath.bindTarget(texpaint, "tex");
-						RenderPath.drawShader("shader_datas/copy_pass/copy_pass");
-						RenderPath.setTarget(texpaint);
-						RenderPath.bindTarget("texpaint_blur", "tex");
-						RenderPath.drawShader("shader_datas/copy_pass/copy_pass");
+						render_path_set_target("texpaint_blur");
+						render_path_bind_target(texpaint, "tex");
+						render_path_draw_shader("shader_datas/copy_pass/copy_pass");
+						render_path_set_target(texpaint);
+						render_path_bind_target("texpaint_blur", "tex");
+						render_path_draw_shader("shader_datas/copy_pass/copy_pass");
 					}
 				}
 
@@ -325,15 +325,15 @@ class RenderPathPaint {
 
 			///if is_sculpt
 			let texpaint = "texpaint" + tid;
-			RenderPath.setTarget("texpaint_blend1");
-			RenderPath.bindTarget("texpaint_blend0", "tex");
-			RenderPath.drawShader("shader_datas/copy_pass/copyR8_pass");
-			RenderPath.setTarget(texpaint, ["texpaint_blend0"]);
-			RenderPath.bindTarget("gbufferD_undo", "gbufferD");
+			render_path_set_target("texpaint_blend1");
+			render_path_bind_target("texpaint_blend0", "tex");
+			render_path_draw_shader("shader_datas/copy_pass/copyR8_pass");
+			render_path_set_target(texpaint, ["texpaint_blend0"]);
+			render_path_bind_target("gbufferD_undo", "gbufferD");
 			if ((Context.raw.xray || Config.raw.brush_angle_reject) && Config.raw.brush_3d) {
-				RenderPath.bindTarget("gbuffer0", "gbuffer0");
+				render_path_bind_target("gbuffer0", "gbuffer0");
 			}
-			RenderPath.bindTarget("texpaint_blend1", "paintmask");
+			render_path_bind_target("texpaint_blend1", "paintmask");
 
 			// Read texcoords from gbuffer
 			let readTC = (Context.raw.tool == WorkspaceTool.ToolFill && Context.raw.fillTypeHandle.position == FillType.FillFace) ||
@@ -341,25 +341,25 @@ class RenderPathPaint {
 						  Context.raw.tool == WorkspaceTool.ToolBlur ||
 						  Context.raw.tool == WorkspaceTool.ToolSmudge;
 			if (readTC) {
-				RenderPath.bindTarget("gbuffer2", "gbuffer2");
+				render_path_bind_target("gbuffer2", "gbuffer2");
 			}
-			RenderPath.bindTarget("gbuffer0_undo", "gbuffer0_undo");
+			render_path_bind_target("gbuffer0_undo", "gbuffer0_undo");
 
-			let materialContexts: TMaterialContext[] = [];
-			let shaderContexts: TShaderContext[] = [];
+			let materialContexts: material_context_t[] = [];
+			let shaderContexts: shader_context_t[] = [];
 			let mats = Project.paintObjects[0].materials;
-			MeshObject.getContexts(Project.paintObjects[0], "paint", mats, materialContexts, shaderContexts);
+			mesh_object_get_contexts(Project.paintObjects[0], "paint", mats, materialContexts, shaderContexts);
 
 			let cc_context = shaderContexts[0];
-			if (ConstData.screenAlignedVB == null) ConstData.createScreenAlignedData();
-			RenderPath.currentG.setPipeline(cc_context._pipeState);
-			Uniforms.setContextConstants(RenderPath.currentG, cc_context, RenderPath.bindParams);
-			Uniforms.setObjectConstants(RenderPath.currentG, cc_context, Project.paintObjects[0].base);
-			Uniforms.setMaterialConstants(RenderPath.currentG, cc_context, materialContexts[0]);
-			RenderPath.currentG.setVertexBuffer(ConstData.screenAlignedVB);
-			RenderPath.currentG.setIndexBuffer(ConstData.screenAlignedIB);
-			RenderPath.currentG.drawIndexedVertices();
-			RenderPath.end();
+			if (const_data_screen_aligned_vb == null) const_data_create_screen_aligned_data();
+			g4_set_pipeline(cc_context._.pipe_state);
+			uniforms_set_context_consts(cc_context,_render_path_bind_params);
+			uniforms_set_obj_consts(cc_context, Project.paintObjects[0].base);
+			uniforms_set_material_consts(cc_context, materialContexts[0]);
+			g4_set_vertex_buffer(const_data_screen_aligned_vb);
+			g4_set_index_buffer(const_data_screen_aligned_ib);
+			g4_draw();
+			render_path_end();
 			///end
 		}
 	}
@@ -368,29 +368,29 @@ class RenderPathPaint {
 		let tid = Context.raw.layer.id;
 		let hid = History.undoI - 1 < 0 ? Config.raw.undo_steps - 1 : History.undoI - 1;
 		if (use) {
-			RenderPathPaint._texpaint = RenderPath.renderTargets.get("texpaint" + tid);
-			RenderPathPaint._texpaint_undo = RenderPath.renderTargets.get("texpaint_undo" + hid);
-			RenderPathPaint._texpaint_nor_undo = RenderPath.renderTargets.get("texpaint_nor_undo" + hid);
-			RenderPathPaint._texpaint_pack_undo = RenderPath.renderTargets.get("texpaint_pack_undo" + hid);
-			RenderPathPaint._texpaint_nor = RenderPath.renderTargets.get("texpaint_nor" + tid);
-			RenderPathPaint._texpaint_pack = RenderPath.renderTargets.get("texpaint_pack" + tid);
-			RenderPath.renderTargets.set("texpaint_undo" + hid, RenderPath.renderTargets.get("texpaint" + tid));
-			RenderPath.renderTargets.set("texpaint" + tid, RenderPath.renderTargets.get("texpaint_live"));
+			RenderPathPaint._texpaint = render_path_render_targets.get("texpaint" + tid);
+			RenderPathPaint._texpaint_undo = render_path_render_targets.get("texpaint_undo" + hid);
+			RenderPathPaint._texpaint_nor_undo = render_path_render_targets.get("texpaint_nor_undo" + hid);
+			RenderPathPaint._texpaint_pack_undo = render_path_render_targets.get("texpaint_pack_undo" + hid);
+			RenderPathPaint._texpaint_nor = render_path_render_targets.get("texpaint_nor" + tid);
+			RenderPathPaint._texpaint_pack = render_path_render_targets.get("texpaint_pack" + tid);
+			render_path_render_targets.set("texpaint_undo" + hid,render_path_render_targets.get("texpaint" + tid));
+			render_path_render_targets.set("texpaint" + tid,render_path_render_targets.get("texpaint_live"));
 			if (SlotLayer.isLayer(Context.raw.layer)) {
-				RenderPath.renderTargets.set("texpaint_nor_undo" + hid, RenderPath.renderTargets.get("texpaint_nor" + tid));
-				RenderPath.renderTargets.set("texpaint_pack_undo" + hid, RenderPath.renderTargets.get("texpaint_pack" + tid));
-				RenderPath.renderTargets.set("texpaint_nor" + tid, RenderPath.renderTargets.get("texpaint_nor_live"));
-				RenderPath.renderTargets.set("texpaint_pack" + tid, RenderPath.renderTargets.get("texpaint_pack_live"));
+				render_path_render_targets.set("texpaint_nor_undo" + hid,render_path_render_targets.get("texpaint_nor" + tid));
+				render_path_render_targets.set("texpaint_pack_undo" + hid,render_path_render_targets.get("texpaint_pack" + tid));
+				render_path_render_targets.set("texpaint_nor" + tid,render_path_render_targets.get("texpaint_nor_live"));
+				render_path_render_targets.set("texpaint_pack" + tid,render_path_render_targets.get("texpaint_pack_live"));
 			}
 		}
 		else {
-			RenderPath.renderTargets.set("texpaint" + tid, RenderPathPaint._texpaint);
-			RenderPath.renderTargets.set("texpaint_undo" + hid, RenderPathPaint._texpaint_undo);
+			render_path_render_targets.set("texpaint" + tid, RenderPathPaint._texpaint);
+			render_path_render_targets.set("texpaint_undo" + hid, RenderPathPaint._texpaint_undo);
 			if (SlotLayer.isLayer(Context.raw.layer)) {
-				RenderPath.renderTargets.set("texpaint_nor_undo" + hid, RenderPathPaint._texpaint_nor_undo);
-				RenderPath.renderTargets.set("texpaint_pack_undo" + hid, RenderPathPaint._texpaint_pack_undo);
-				RenderPath.renderTargets.set("texpaint_nor" + tid, RenderPathPaint._texpaint_nor);
-				RenderPath.renderTargets.set("texpaint_pack" + tid, RenderPathPaint._texpaint_pack);
+				render_path_render_targets.set("texpaint_nor_undo" + hid, RenderPathPaint._texpaint_nor_undo);
+				render_path_render_targets.set("texpaint_pack_undo" + hid, RenderPathPaint._texpaint_pack_undo);
+				render_path_render_targets.set("texpaint_nor" + tid, RenderPathPaint._texpaint_nor);
+				render_path_render_targets.set("texpaint_pack" + tid, RenderPathPaint._texpaint_pack);
 			}
 		}
 		RenderPathPaint.liveLayerLocked = use;
@@ -416,16 +416,16 @@ class RenderPathPaint {
 
 		let tid = Context.raw.layer.id;
 		if (SlotLayer.isMask(Context.raw.layer)) {
-			RenderPath.setTarget("texpaint_live");
-			RenderPath.bindTarget("texpaint" + tid, "tex");
-			RenderPath.drawShader("shader_datas/copy_pass/copy_pass");
+			render_path_set_target("texpaint_live");
+			render_path_bind_target("texpaint" + tid, "tex");
+			render_path_draw_shader("shader_datas/copy_pass/copy_pass");
 		}
 		else {
-			RenderPath.setTarget("texpaint_live", ["texpaint_nor_live", "texpaint_pack_live"]);
-			RenderPath.bindTarget("texpaint" + tid, "tex0");
-			RenderPath.bindTarget("texpaint_nor" + tid, "tex1");
-			RenderPath.bindTarget("texpaint_pack" + tid, "tex2");
-			RenderPath.drawShader("shader_datas/copy_mrt3_pass/copy_mrt3_pass");
+			render_path_set_target("texpaint_live", ["texpaint_nor_live", "texpaint_pack_live"]);
+			render_path_bind_target("texpaint" + tid, "tex0");
+			render_path_bind_target("texpaint_nor" + tid, "tex1");
+			render_path_bind_target("texpaint_pack" + tid, "tex2");
+			render_path_draw_shader("shader_datas/copy_mrt3_pass/copy_mrt3_pass");
 		}
 
 		RenderPathPaint.useLiveLayer(true);
@@ -436,8 +436,8 @@ class RenderPathPaint {
 		let _x = Context.raw.paintVec.x;
 		let _y = Context.raw.paintVec.y;
 		if (Context.raw.brushLocked) {
-			Context.raw.paintVec.x = (Context.raw.lockStartedX - App.x()) / App.w();
-			Context.raw.paintVec.y = (Context.raw.lockStartedY - App.y()) / App.h();
+			Context.raw.paintVec.x = (Context.raw.lockStartedX - app_x()) / app_w();
+			Context.raw.paintVec.y = (Context.raw.lockStartedY - app_y()) / app_h();
 		}
 		let _lastX = Context.raw.lastPaintVecX;
 		let _lastY = Context.raw.lastPaintVecY;
@@ -487,48 +487,47 @@ class RenderPathPaint {
 		let mx = Context.raw.paintVec.x;
 		let my = 1.0 - Context.raw.paintVec.y;
 		if (Context.raw.brushLocked) {
-			mx = (Context.raw.lockStartedX - App.x()) / App.w();
-			my = 1.0 - (Context.raw.lockStartedY - App.y()) / App.h();
+			mx = (Context.raw.lockStartedX - app_x()) / app_w();
+			my = 1.0 - (Context.raw.lockStartedY - app_y()) / app_h();
 		}
 		let radius = decalMask ? Context.raw.brushDecalMaskRadius : Context.raw.brushRadius;
 		RenderPathPaint.drawCursor(mx, my, Context.raw.brushNodesRadius * radius / 3.4);
 	}
 
 	static drawCursor = (mx: f32, my: f32, radius: f32, tintR = 1.0, tintG = 1.0, tintB = 1.0) => {
-		let plane: TMeshObject = Scene.getChild(".Plane").ext;
+		let plane: mesh_object_t = scene_get_child(".Plane").ext;
 		let geom = plane.data;
 
-		let g = RenderPath.frameG;
 		if (Base.pipeCursor == null) Base.makeCursorPipe();
 
-		RenderPath.setTarget("");
-		g.setPipeline(Base.pipeCursor);
+		render_path_set_target("");
+		g4_set_pipeline(Base.pipeCursor);
 		let decal = Context.raw.tool == WorkspaceTool.ToolDecal || Context.raw.tool == WorkspaceTool.ToolText;
 		let decalMask = decal && Operator.shortcut(Config.keymap.decal_mask, ShortcutType.ShortcutDown);
 		let img = (decal && !decalMask) ? Context.raw.decalImage : Res.get("cursor.k");
-		g.setTexture(Base.cursorTex, img);
-		let gbuffer0 = RenderPath.renderTargets.get("gbuffer0").image;
-		g.setTextureDepth(Base.cursorGbufferD, gbuffer0);
-		g.setFloat2(Base.cursorMouse, mx, my);
-		g.setFloat2(Base.cursorTexStep, 1 / gbuffer0.width, 1 / gbuffer0.height);
-		g.setFloat(Base.cursorRadius, radius);
-		let right = Vec4.normalize(CameraObject.rightWorld(Scene.camera));
-		g.setFloat3(Base.cursorCameraRight, right.x, right.y, right.z);
-		g.setFloat3(Base.cursorTint, tintR, tintG, tintB);
-		g.setMatrix(Base.cursorVP, Scene.camera.VP);
-		let helpMat = Mat4.identity();
-		Mat4.getInverse(helpMat, Scene.camera.VP);
-		g.setMatrix(Base.cursorInvVP, helpMat);
+		g4_set_tex(Base.cursorTex, img);
+		let gbuffer0 = render_path_render_targets.get("gbuffer0")._image;
+		g4_set_tex_depth(Base.cursorGbufferD, gbuffer0);
+		g4_set_float2(Base.cursorMouse, mx, my);
+		g4_set_float2(Base.cursorTexStep, 1 / gbuffer0.width, 1 / gbuffer0.height);
+		g4_set_float(Base.cursorRadius, radius);
+		let right = vec4_normalize(camera_object_right_world(scene_camera));
+		g4_set_float3(Base.cursorCameraRight, right.x, right.y, right.z);
+		g4_set_float3(Base.cursorTint, tintR, tintG, tintB);
+		g4_set_mat(Base.cursorVP, scene_camera.vp);
+		let helpMat = mat4_identity();
+		mat4_get_inv(helpMat, scene_camera.vp);
+		g4_set_mat(Base.cursorInvVP, helpMat);
 		///if (krom_metal || krom_vulkan)
-		g.setVertexBuffer(MeshData.get(geom, [{name: "tex", data: "short2norm"}]));
+		g4_set_vertex_buffer(mesh_data_get(geom, [{name: "tex", data: "short2norm"}]));
 		///else
-		g.setVertexBuffer(geom._vertexBuffer);
+		g4_set_vertex_buffer(geom._.vertex_buffer);
 		///end
-		g.setIndexBuffer(geom._indexBuffers[0]);
-		g.drawIndexedVertices();
+		g4_set_index_buffer(geom._.index_buffers[0]);
+		g4_draw();
 
-		g.disableScissor();
-		RenderPath.end();
+		g4_disable_scissor();
+		render_path_end();
 	}
 
 	static commandsSymmetry = () => {
@@ -539,42 +538,42 @@ class RenderPathPaint {
 			let sy = t.scale.y;
 			let sz = t.scale.z;
 			if (Context.raw.symX) {
-				Vec4.set(t.scale, -sx, sy, sz);
-				Transform.buildMatrix(t);
+				vec4_set(t.scale, -sx, sy, sz);
+				transform_build_matrix(t);
 				RenderPathPaint.commandsPaint(false);
 			}
 			if (Context.raw.symY) {
-				Vec4.set(t.scale, sx, -sy, sz);
-				Transform.buildMatrix(t);
+				vec4_set(t.scale, sx, -sy, sz);
+				transform_build_matrix(t);
 				RenderPathPaint.commandsPaint(false);
 			}
 			if (Context.raw.symZ) {
-				Vec4.set(t.scale, sx, sy, -sz);
-				Transform.buildMatrix(t);
+				vec4_set(t.scale, sx, sy, -sz);
+				transform_build_matrix(t);
 				RenderPathPaint.commandsPaint(false);
 			}
 			if (Context.raw.symX && Context.raw.symY) {
-				Vec4.set(t.scale, -sx, -sy, sz);
-				Transform.buildMatrix(t);
+				vec4_set(t.scale, -sx, -sy, sz);
+				transform_build_matrix(t);
 				RenderPathPaint.commandsPaint(false);
 			}
 			if (Context.raw.symX && Context.raw.symZ) {
-				Vec4.set(t.scale, -sx, sy, -sz);
-				Transform.buildMatrix(t);
+				vec4_set(t.scale, -sx, sy, -sz);
+				transform_build_matrix(t);
 				RenderPathPaint.commandsPaint(false);
 			}
 			if (Context.raw.symY && Context.raw.symZ) {
-				Vec4.set(t.scale, sx, -sy, -sz);
-				Transform.buildMatrix(t);
+				vec4_set(t.scale, sx, -sy, -sz);
+				transform_build_matrix(t);
 				RenderPathPaint.commandsPaint(false);
 			}
 			if (Context.raw.symX && Context.raw.symY && Context.raw.symZ) {
-				Vec4.set(t.scale, -sx, -sy, -sz);
-				Transform.buildMatrix(t);
+				vec4_set(t.scale, -sx, -sy, -sz);
+				transform_build_matrix(t);
 				RenderPathPaint.commandsPaint(false);
 			}
-			Vec4.set(t.scale, sx, sy, sz);
-			Transform.buildMatrix(t);
+			vec4_set(t.scale, sx, sy, sz);
+			transform_build_matrix(t);
 		}
 	}
 
@@ -594,8 +593,8 @@ class RenderPathPaint {
 	static liveBrushDirty = () => {
 		let mx = RenderPathPaint.lastX;
 		let my = RenderPathPaint.lastY;
-		RenderPathPaint.lastX = Mouse.viewX;
-		RenderPathPaint.lastY = Mouse.viewY;
+		RenderPathPaint.lastX = mouse_view_x();
+		RenderPathPaint.lastY = mouse_view_y();
 		if (Config.raw.brush_live && Context.raw.pdirty <= 0) {
 			let moved = (mx != RenderPathPaint.lastX || my != RenderPathPaint.lastY) && (Context.inViewport() || Context.in2dView());
 			if (moved || Context.raw.brushLocked) {
@@ -623,13 +622,13 @@ class RenderPathPaint {
 			History.paint();
 
 			///if is_sculpt
-			RenderPath.setTarget("gbuffer0_undo");
-			RenderPath.bindTarget("gbuffer0", "tex");
-			RenderPath.drawShader("shader_datas/copy_pass/copy_pass");
+			render_path_set_target("gbuffer0_undo");
+			render_path_bind_target("gbuffer0", "tex");
+			render_path_draw_shader("shader_datas/copy_pass/copy_pass");
 
-			RenderPath.setTarget("gbufferD_undo");
-			RenderPath.bindTarget("_main", "tex");
-			RenderPath.drawShader("shader_datas/copy_pass/copy_pass");
+			render_path_set_target("gbufferD_undo");
+			render_path_bind_target("_main", "tex");
+			render_path_draw_shader("shader_datas/copy_pass/copy_pass");
 			///end
 		}
 
@@ -716,10 +715,10 @@ class RenderPathPaint {
 							RenderPathPaint.commandsPaint();
 							Context.raw.pdirty = 0;
 							if (RenderPathPaint.pushUndoLast) History.paint();
-							App.notifyOnInit(_renderFinal);
+							app_notify_on_init(_renderFinal);
 						}
 						let bakeType = Context.raw.bakeType as BakeType;
-						App.notifyOnInit(bakeType == BakeType.BakeDerivative ? _renderDeriv : _renderFinal);
+						app_notify_on_init(bakeType == BakeType.BakeDerivative ? _renderDeriv : _renderFinal);
 					}
 				}
 				else if (Context.raw.bakeType == BakeType.BakeObjectID) {
@@ -765,13 +764,13 @@ class RenderPathPaint {
 		if (Context.raw.brushBlendDirty) {
 			Context.raw.brushBlendDirty = false;
 			///if krom_metal
-			RenderPath.setTarget("texpaint_blend0");
-			RenderPath.clearTarget(0x00000000);
-			RenderPath.setTarget("texpaint_blend1");
-			RenderPath.clearTarget(0x00000000);
+			render_path_set_target("texpaint_blend0");
+			render_path_clear_target(0x00000000);
+			render_path_set_target("texpaint_blend1");
+			render_path_clear_target(0x00000000);
 			///else
-			RenderPath.setTarget("texpaint_blend0", ["texpaint_blend1"]);
-			RenderPath.clearTarget(0x00000000);
+			render_path_set_target("texpaint_blend0", ["texpaint_blend1"]);
+			render_path_clear_target(0x00000000);
 			///end
 		}
 
@@ -793,35 +792,35 @@ class RenderPathPaint {
 			Context.raw.mergedObject.base.visible = false;
 		}
 
-		let cam = Scene.camera;
-		Mat4.setFrom(Context.raw.savedCamera, cam.base.transform.local);
+		let cam = scene_camera;
+		mat4_set_from(Context.raw.savedCamera, cam.base.transform.local);
 		RenderPathPaint.savedFov = cam.data.fov;
 		Viewport.updateCameraType(CameraType.CameraPerspective);
-		let m = Mat4.identity();
-		Mat4.translate(m, 0, 0, 0.5);
-		Transform.setMatrix(cam.base.transform, m);
+		let m = mat4_identity();
+		mat4_translate(m, 0, 0, 0.5);
+		transform_set_matrix(cam.base.transform, m);
 		cam.data.fov = Base.defaultFov;
-		CameraObject.buildProjection(cam);
-		CameraObject.buildMatrix(cam);
+		camera_object_build_proj(cam);
+		camera_object_build_mat(cam);
 
 		let tw = 0.95 * UIView2D.panScale;
 		let tx = UIView2D.panX / UIView2D.ww;
-		let ty = UIView2D.panY / App.h();
-		Mat4.setIdentity(m);
-		Mat4.scale(m, Vec4.create(tw, tw, 1));
-		Mat4.setLoc(m, Vec4.create(tx, ty, 0));
-		let m2 = Mat4.identity();
-		Mat4.getInverse(m2, Scene.camera.VP);
-		Mat4.multmat(m, m2);
+		let ty = UIView2D.panY / app_h();
+		mat4_set_identity(m);
+		mat4_scale(m, vec4_create(tw, tw, 1));
+		mat4_set_loc(m, vec4_create(tx, ty, 0));
+		let m2 = mat4_identity();
+		mat4_get_inv(m2, scene_camera.vp);
+		mat4_mult_mat(m, m2);
 
 		let tiled = UIView2D.tiledShow;
-		if (tiled && Scene.getChild(".PlaneTiled") == null) {
+		if (tiled && scene_get_child(".PlaneTiled") == null) {
 			// 3x3 planes
 			let posa = [32767,0,-32767,0,10922,0,-10922,0,10922,0,-32767,0,10922,0,-10922,0,-10922,0,10922,0,-10922,0,-10922,0,-10922,0,10922,0,-32767,0,32767,0,-32767,0,10922,0,10922,0,10922,0,-10922,0,32767,0,-10922,0,10922,0,32767,0,10922,0,10922,0,32767,0,10922,0,10922,0,-10922,0,-10922,0,-32767,0,10922,0,-32767,0,-10922,0,32767,0,-10922,0,10922,0,10922,0,10922,0,-10922,0,-10922,0,-32767,0,-32767,0,-10922,0,-32767,0,-32767,0,10922,0,-32767,0,-10922,0,-10922,0,-10922,0,-32767,0,32767,0,-32767,0,32767,0,-10922,0,10922,0,-10922,0,10922,0,-10922,0,10922,0,10922,0,-10922,0,10922,0,-10922,0,10922,0,-10922,0,32767,0,-32767,0,32767,0,10922,0,10922,0,10922,0,32767,0,-10922,0,32767,0,32767,0,10922,0,32767,0,32767,0,10922,0,32767,0,-10922,0,-10922,0,-10922,0,10922,0,-32767,0,10922,0,32767,0,-10922,0,32767,0,10922,0,10922,0,10922,0,-10922,0,-32767,0,-10922,0,-10922,0,-32767,0,-10922,0,10922,0,-32767,0,10922,0,-10922,0,-10922,0,-10922,0];
 			let nora = [0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767];
 			let texa = [32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0,32767,32767,32767,0,0,0];
 			let inda = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53];
-			let raw: TMeshData = {
+			let raw: mesh_data_t = {
 				name: ".PlaneTiled",
 				vertex_arrays: [
 					{ attrib: "pos", values: new Int16Array(posa), data: "short4norm" },
@@ -834,30 +833,29 @@ class RenderPathPaint {
 				scale_pos: 1.5,
 				scale_tex: 1.0
 			};
-			MeshData.create(raw, (md: TMeshData) => {
-				let materials: TMaterialData[] = Scene.getChild(".Plane").ext.materials;
-				let o = Scene.addMeshObject(md, materials);
-				o.base.name = ".PlaneTiled";
-			});
+			let md: mesh_data_t = mesh_data_create(raw);
+			let materials: material_data_t[] = scene_get_child(".Plane").ext.materials;
+			let o = scene_add_mesh_object(md, materials);
+			o.base.name = ".PlaneTiled";
 		}
 
-		RenderPathPaint.planeo = Scene.getChild(tiled ? ".PlaneTiled" : ".Plane").ext;
+		RenderPathPaint.planeo = scene_get_child(tiled ? ".PlaneTiled" : ".Plane").ext;
 		RenderPathPaint.planeo.base.visible = true;
 		Context.raw.paintObject = RenderPathPaint.planeo;
 
-		let v = Vec4.create();
-		let sx = Vec4.vec4_length(Vec4.set(v, m._00, m._01, m._02));
-		Quat.fromEuler(RenderPathPaint.planeo.base.transform.rot, -Math.PI / 2, 0, 0);
-		Vec4.set(RenderPathPaint.planeo.base.transform.scale, sx, 1.0, sx);
+		let v = vec4_create();
+		let sx = vec4_len(vec4_set(v, m.m[0], m.m[1], m.m[2]));
+		quat_from_euler(RenderPathPaint.planeo.base.transform.rot, -Math.PI / 2, 0, 0);
+		vec4_set(RenderPathPaint.planeo.base.transform.scale, sx, 1.0, sx);
 		RenderPathPaint.planeo.base.transform.scale.z *= Config.getTextureResY() / Config.getTextureResX();
-		Vec4.set(RenderPathPaint.planeo.base.transform.loc, m._30, -m._31, 0.0);
-		Transform.buildMatrix(RenderPathPaint.planeo.base.transform);
+		vec4_set(RenderPathPaint.planeo.base.transform.loc, m.m[12], -m.m[13], 0.0);
+		transform_build_matrix(RenderPathPaint.planeo.base.transform);
 	}
 
 	static restorePlaneMesh = () => {
 		Context.raw.paint2dView = false;
 		RenderPathPaint.planeo.base.visible = false;
-		Vec4.set(RenderPathPaint.planeo.base.transform.loc, 0.0, 0.0, 0.0);
+		vec4_set(RenderPathPaint.planeo.base.transform.loc, 0.0, 0.0, 0.0);
 		for (let i = 0; i < Project.paintObjects.length; ++i) {
 			Project.paintObjects[i].base.visible = RenderPathPaint.visibles[i];
 		}
@@ -865,11 +863,11 @@ class RenderPathPaint {
 			Context.raw.mergedObject.base.visible = RenderPathPaint.mergedObjectVisible;
 		}
 		Context.raw.paintObject = RenderPathPaint.painto;
-		Transform.setMatrix(Scene.camera.base.transform, Context.raw.savedCamera);
-		Scene.camera.data.fov = RenderPathPaint.savedFov;
+		transform_set_matrix(scene_camera.base.transform, Context.raw.savedCamera);
+		scene_camera.data.fov = RenderPathPaint.savedFov;
 		Viewport.updateCameraType(Context.raw.cameraType);
-		CameraObject.buildProjection(Scene.camera);
-		CameraObject.buildMatrix(Scene.camera);
+		camera_object_build_proj(scene_camera);
+		camera_object_build_mat(scene_camera);
 
 		RenderPathBase.drawGbuffer();
 	}
@@ -883,12 +881,12 @@ class RenderPathPaint {
 
 		for (let i = 0; i < Project.layers.length; ++i) {
 			let l = Project.layers[i];
-			RenderPath.bindTarget("texpaint" + l.id, "texpaint" + l.id);
+			render_path_bind_target("texpaint" + l.id, "texpaint" + l.id);
 
 			///if is_paint
 			if (SlotLayer.isLayer(l)) {
-				RenderPath.bindTarget("texpaint_nor" + l.id, "texpaint_nor" + l.id);
-				RenderPath.bindTarget("texpaint_pack" + l.id, "texpaint_pack" + l.id);
+				render_path_bind_target("texpaint_nor" + l.id, "texpaint_nor" + l.id);
+				render_path_bind_target("texpaint_pack" + l.id, "texpaint_pack" + l.id);
 			}
 			///end
 		}
@@ -910,27 +908,27 @@ class RenderPathPaint {
 			let tid = Context.raw.layer.id;
 			if (base) {
 				let texpaint = "texpaint";
-				RenderPath.setTarget("temptex0");
-				RenderPath.bindTarget(texpaint + tid, "tex");
-				RenderPath.drawShader("shader_datas/copy_pass/copy_pass");
-				RenderPath.setTarget(texpaint + tid);
-				RenderPath.bindTarget("temptex0", "tex");
-				RenderPath.drawShader("shader_datas/dilate_pass/dilate_pass");
+				render_path_set_target("temptex0");
+				render_path_bind_target(texpaint + tid, "tex");
+				render_path_draw_shader("shader_datas/copy_pass/copy_pass");
+				render_path_set_target(texpaint + tid);
+				render_path_bind_target("temptex0", "tex");
+				render_path_draw_shader("shader_datas/dilate_pass/dilate_pass");
 			}
 			if (nor_pack && !SlotLayer.isMask(Context.raw.layer)) {
-				RenderPath.setTarget("temptex0");
-				RenderPath.bindTarget("texpaint_nor" + tid, "tex");
-				RenderPath.drawShader("shader_datas/copy_pass/copy_pass");
-				RenderPath.setTarget("texpaint_nor" + tid);
-				RenderPath.bindTarget("temptex0", "tex");
-				RenderPath.drawShader("shader_datas/dilate_pass/dilate_pass");
+				render_path_set_target("temptex0");
+				render_path_bind_target("texpaint_nor" + tid, "tex");
+				render_path_draw_shader("shader_datas/copy_pass/copy_pass");
+				render_path_set_target("texpaint_nor" + tid);
+				render_path_bind_target("temptex0", "tex");
+				render_path_draw_shader("shader_datas/dilate_pass/dilate_pass");
 
-				RenderPath.setTarget("temptex0");
-				RenderPath.bindTarget("texpaint_pack" + tid, "tex");
-				RenderPath.drawShader("shader_datas/copy_pass/copy_pass");
-				RenderPath.setTarget("texpaint_pack" + tid);
-				RenderPath.bindTarget("temptex0", "tex");
-				RenderPath.drawShader("shader_datas/dilate_pass/dilate_pass");
+				render_path_set_target("temptex0");
+				render_path_bind_target("texpaint_pack" + tid, "tex");
+				render_path_draw_shader("shader_datas/copy_pass/copy_pass");
+				render_path_set_target("texpaint_pack" + tid);
+				render_path_bind_target("temptex0", "tex");
+				render_path_draw_shader("shader_datas/dilate_pass/dilate_pass");
 			}
 		}
 		///end

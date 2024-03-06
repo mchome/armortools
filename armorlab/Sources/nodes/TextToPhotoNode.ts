@@ -2,7 +2,7 @@
 class TextToPhotoNode extends LogicNode {
 
 	static prompt = "";
-	static image: Image = null;
+	static image: image_t = null;
 	static tiling = false;
 	static text_encoder_blob : ArrayBuffer;
 	static unet_blob : ArrayBuffer;
@@ -12,37 +12,34 @@ class TextToPhotoNode extends LogicNode {
 		super();
 	}
 
-	override getAsImage = (from: i32, done: (img: Image)=>void) => {
-		TextToPhotoNode.stableDiffusion(TextToPhotoNode.prompt, (_image: Image) => {
+	override getAsImage = (from: i32, done: (img: image_t)=>void) => {
+		TextToPhotoNode.stableDiffusion(TextToPhotoNode.prompt, (_image: image_t) => {
 			TextToPhotoNode.image = _image;
 			done(TextToPhotoNode.image);
 		});
 	}
 
-	override getCachedImage = (): Image => {
+	override getCachedImage = (): image_t => {
 		return TextToPhotoNode.image;
 	}
 
-	static buttons = (ui: Zui, nodes: Nodes, node: TNode) => {
+	static buttons = (ui: zui_t, nodes: zui_nodes_t, node: zui_node_t) => {
 		TextToPhotoNode.tiling = node.buttons[0].default_value == 0 ? false : true;
-		TextToPhotoNode.prompt = ui.textArea(Zui.handle("texttophotonode_0"), Align.Left, true, tr("prompt"), true);
+		TextToPhotoNode.prompt = zui_text_area(zui_handle("texttophotonode_0"), Align.Left, true, tr("prompt"), true);
 		node.buttons[1].height = TextToPhotoNode.prompt.split("\n").length;
 	}
 
-	static stableDiffusion = (prompt: string, done: (img: Image)=>void, inpaintLatents: Float32Array = null, offset = 0, upscale = true, mask: Float32Array = null, latents_orig: Float32Array = null) => {
-		Data.getBlob("models/sd_text_encoder.quant.onnx", (_text_encoder_blob: ArrayBuffer) => {
-		Data.getBlob("models/sd_unet.quant.onnx", (_unet_blob: ArrayBuffer) => {
-		Data.getBlob("models/sd_vae_decoder.quant.onnx", (_vae_decoder_blob: ArrayBuffer) => {
-			TextToPhotoNode.text_encoder_blob = _text_encoder_blob;
-			TextToPhotoNode.unet_blob = _unet_blob;
-			TextToPhotoNode.vae_decoder_blob = _vae_decoder_blob;
-			TextToPhotoNode.textEncoder(prompt, inpaintLatents, (latents: Float32Array, text_embeddings: Float32Array) => {
-				TextToPhotoNode.unet(latents, text_embeddings, mask, latents_orig, offset, (latents: Float32Array) => {
-					TextToPhotoNode.vaeDecoder(latents, upscale, done);
-				});
+	static stableDiffusion = (prompt: string, done: (img: image_t)=>void, inpaintLatents: Float32Array = null, offset = 0, upscale = true, mask: Float32Array = null, latents_orig: Float32Array = null) => {
+		let _text_encoder_blob: ArrayBuffer = data_get_blob("models/sd_text_encoder.quant.onnx");
+		let _unet_blob: ArrayBuffer = data_get_blob("models/sd_unet.quant.onnx");
+		let _vae_decoder_blob: ArrayBuffer = data_get_blob("models/sd_vae_decoder.quant.onnx");
+		TextToPhotoNode.text_encoder_blob = _text_encoder_blob;
+		TextToPhotoNode.unet_blob = _unet_blob;
+		TextToPhotoNode.vae_decoder_blob = _vae_decoder_blob;
+		TextToPhotoNode.textEncoder(prompt, inpaintLatents, (latents: Float32Array, text_embeddings: Float32Array) => {
+			TextToPhotoNode.unet(latents, text_embeddings, mask, latents_orig, offset, (latents: Float32Array) => {
+				TextToPhotoNode.vaeDecoder(latents, upscale, done);
 			});
-		});
-		});
 		});
 	}
 
@@ -58,11 +55,11 @@ class TextToPhotoNode extends LogicNode {
 			}
 
 			let i32a = new Int32Array(TextToPhotoNode.text_input_ids);
-			let text_embeddings_buf = Krom.mlInference(TextToPhotoNode.text_encoder_blob, [i32a.buffer], [[1, 77]], [1, 77, 768], Config.raw.gpu_inference);
+			let text_embeddings_buf = krom_ml_inference(TextToPhotoNode.text_encoder_blob, [i32a.buffer], [[1, 77]], [1, 77, 768], Config.raw.gpu_inference);
 			let text_embeddings = new Float32Array(text_embeddings_buf);
 
 			i32a = new Int32Array(TextToPhotoNode.uncond_input_ids);
-			let uncond_embeddings_buf = Krom.mlInference(TextToPhotoNode.text_encoder_blob, [i32a.buffer], [[1, 77]], [1, 77, 768], Config.raw.gpu_inference);
+			let uncond_embeddings_buf = krom_ml_inference(TextToPhotoNode.text_encoder_blob, [i32a.buffer], [[1, 77]], [1, 77, 768], Config.raw.gpu_inference);
 			let uncond_embeddings = new Float32Array(uncond_embeddings_buf);
 
 			let f32a = new Float32Array(uncond_embeddings.length + text_embeddings.length);
@@ -95,7 +92,7 @@ class TextToPhotoNode extends LogicNode {
 		let ets: Float32Array[] = [];
 		let counter = 0;
 
-		let processing = (g: Graphics2) => {
+		let processing = () => {
 			Console.progress(tr("Processing") + " - " + tr("Text to Photo") + " (" + (counter + 1) + "/" + (50 - offset) + ")");
 
 			let timestep = TextToPhotoNode.timesteps[counter + offset];
@@ -104,7 +101,7 @@ class TextToPhotoNode extends LogicNode {
 
 			let t32 = new Int32Array(2);
 			t32[0] = timestep;
-			let noise_pred_buf = Krom.mlInference(TextToPhotoNode.unet_blob, [latent_model_input.buffer, t32.buffer, text_embeddings.buffer], [[2, 4, 64, 64], [1], [2, 77, 768]], [2, 4, 64, 64], Config.raw.gpu_inference);
+			let noise_pred_buf = krom_ml_inference(TextToPhotoNode.unet_blob, [latent_model_input.buffer, t32.buffer, text_embeddings.buffer], [[2, 4, 64, 64], [1], [2, 77, 768]], [2, 4, 64, 64], Config.raw.gpu_inference);
 			let noise_pred = new Float32Array(noise_pred_buf);
 
 			for (let i = 0; i < noise_pred_uncond.length; ++i) noise_pred_uncond[i] = noise_pred[i];
@@ -188,21 +185,21 @@ class TextToPhotoNode extends LogicNode {
 			}
 
 			if (counter == (51 - offset)) {
-				App.removeRender2D(processing);
+				app_remove_render_2d(processing);
 				done(latents);
 			}
 		}
-		App.notifyOnRender2D(processing);
+		app_notify_on_render_2d(processing);
 	}
 
-	static vaeDecoder = (latents: Float32Array, upscale: bool, done: (img: Image)=>void) => {
+	static vaeDecoder = (latents: Float32Array, upscale: bool, done: (img: image_t)=>void) => {
 		Console.progress(tr("Processing") + " - " + tr("Text to Photo"));
 		Base.notifyOnNextFrame(() => {
 			for (let i = 0; i < latents.length; ++i) {
 				latents[i] = 1.0 / 0.18215 * latents[i];
 			}
 
-			let pyimage_buf = Krom.mlInference(TextToPhotoNode.vae_decoder_blob, [latents.buffer], [[1, 4, 64, 64]], [1, 3, 512, 512], Config.raw.gpu_inference);
+			let pyimage_buf = krom_ml_inference(TextToPhotoNode.vae_decoder_blob, [latents.buffer], [[1, 4, 64, 64]], [1, 3, 512, 512], Config.raw.gpu_inference);
 			let pyimage = new Float32Array(pyimage_buf);
 
 			for (let i = 0; i < pyimage.length; ++i) {
@@ -218,7 +215,7 @@ class TextToPhotoNode extends LogicNode {
 				u8a[i * 4 + 2] = Math.floor(pyimage[i + 512 * 512 * 2] * 255);
 				u8a[i * 4 + 3] = 255;
 			}
-			let image = Image.fromBytes(u8a.buffer, 512, 512);
+			let image = image_from_bytes(u8a.buffer, 512, 512);
 
 			if (TextToPhotoNode.tiling) {
 				TilingNode.prompt = TextToPhotoNode.prompt;
@@ -231,7 +228,7 @@ class TextToPhotoNode extends LogicNode {
 						while (image.width < Config.getTextureResX()) {
 							let lastImage = image;
 							image = UpscaleNode.esrgan(image);
-							lastImage.unload();
+							image_unload(lastImage);
 						}
 						done(image);
 					});
@@ -241,7 +238,7 @@ class TextToPhotoNode extends LogicNode {
 		});
 	}
 
-	static def: TNode = {
+	static def: zui_node_t = {
 		id: 0,
 		name: _tr("Text to Photo"),
 		type: "TextToPhotoNode",

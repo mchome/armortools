@@ -13,7 +13,7 @@ class Path {
 	static textureFormats = ["jpg", "jpeg", "png", "tga", "bmp", "psd", "gif", "hdr", "k"];
 
 	static meshImporters = new Map<string, (s: string, f: (a: any)=>void)=>void>();
-	static textureImporters = new Map<string, (s: string, f: (img: Image)=>void)=>void>();
+	static textureImporters = new Map<string, (s: string, f: (img: image_t)=>void)=>void>();
 
 	static baseColorExt = ["albedo", "alb", "basecol", "basecolor", "diffuse", "diff", "base", "bc", "d", "color", "col"];
 	static opacityExt = ["opac", "opacity", "alpha"];
@@ -26,7 +26,7 @@ class Path {
 	static workingDirCache: string = null;
 
 	static data = (): string => {
-		return Krom.getFilesLocation() + Path.sep + Data.dataPath;
+		return krom_get_files_location() + Path.sep + data_path();
 	}
 
 	static toRelative = (from: string, to: string): string => {
@@ -71,9 +71,9 @@ class Path {
 	static workingDir = (): string => {
 		if (Path.workingDirCache == null) {
 			let cmd = Path.pwd;
-			let save = (Path.isProtected() ? Krom.savePath() : Path.data() + Path.sep) + "working_dir.txt";
-			Krom.sysCommand(cmd + ' > "' + save + '"');
-			Path.workingDirCache = trim_end(System.bufferToString(Krom.loadBlob(save)));
+			let save = (Path.isProtected() ? krom_save_path() : Path.data() + Path.sep) + "working_dir.txt";
+			krom_sys_command(cmd + ' > "' + save + '"');
+			Path.workingDirCache = trim_end(sys_buffer_to_string(krom_load_blob(save)));
 		}
 		return Path.workingDirCache;
 	}
@@ -165,7 +165,7 @@ class Path {
 
 	static isProtected = (): bool => {
 		///if krom_windows
-		return Krom.getFilesLocation().indexOf("Program Files") >= 0;
+		return krom_get_files_location().indexOf("Program Files") >= 0;
 		///elseif krom_android
 		return true;
 		///elseif krom_ios

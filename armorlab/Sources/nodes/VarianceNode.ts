@@ -1,8 +1,8 @@
 
 class VarianceNode extends LogicNode {
 
-	static temp: Image = null;
-	static image: Image = null;
+	static temp: image_t = null;
+	static image: image_t = null;
 	static inst: VarianceNode = null;
 	static prompt = "";
 
@@ -14,24 +14,24 @@ class VarianceNode extends LogicNode {
 
 	static init = () => {
 		if (VarianceNode.temp == null) {
-			VarianceNode.temp = Image.createRenderTarget(512, 512);
+			VarianceNode.temp = image_create_render_target(512, 512);
 		}
 	}
 
-	static buttons = (ui: Zui, nodes: Nodes, node: TNode) => {
-		VarianceNode.prompt = ui.textArea(Zui.handle("variancenode_0"), Align.Left, true, tr("prompt"), true);
+	static buttons = (ui: zui_t, nodes: zui_nodes_t, node: zui_node_t) => {
+		VarianceNode.prompt = zui_text_area(zui_handle("variancenode_0"), Align.Left, true, tr("prompt"), true);
 		node.buttons[0].height = VarianceNode.prompt.split("\n").length;
 	}
 
-	override getAsImage = (from: i32, done: (img: Image)=>void) => {
+	override getAsImage = (from: i32, done: (img: image_t)=>void) => {
 		let strength = (VarianceNode.inst.inputs[1].node as any).value;
 
-		VarianceNode.inst.inputs[0].getAsImage((source: Image) => {
-			VarianceNode.temp.g2.begin(false);
-			VarianceNode.temp.g2.drawScaledImage(source, 0, 0, 512, 512);
-			VarianceNode.temp.g2.end();
+		VarianceNode.inst.inputs[0].getAsImage((source: image_t) => {
+			g2_begin(VarianceNode.temp);
+			g2_draw_scaled_image(source, 0, 0, 512, 512);
+			g2_end();
 
-			let bytes_img = VarianceNode.temp.getPixels();
+			let bytes_img = image_get_pixels(VarianceNode.temp);
 			let u8a = new Uint8Array(bytes_img);
 			let f32a = new Float32Array(3 * 512 * 512);
 			for (let i = 0; i < (512 * 512); ++i) {
@@ -42,40 +42,39 @@ class VarianceNode extends LogicNode {
 
 			Console.progress(tr("Processing") + " - " + tr("Variance"));
 			Base.notifyOnNextFrame(() => {
-				Data.getBlob("models/sd_vae_encoder.quant.onnx", (vae_encoder_blob: ArrayBuffer) => {
-					let latents_buf = Krom.mlInference(vae_encoder_blob, [f32a.buffer], [[1, 3, 512, 512]], [1, 4, 64, 64], Config.raw.gpu_inference);
-					let latents = new Float32Array(latents_buf);
-					for (let i = 0; i < latents.length; ++i) {
-						latents[i] = 0.18215 * latents[i];
-					}
+				let vae_encoder_blob: ArrayBuffer = data_get_blob("models/sd_vae_encoder.quant.onnx");
+				let latents_buf = krom_ml_inference(vae_encoder_blob, [f32a.buffer], [[1, 3, 512, 512]], [1, 4, 64, 64], Config.raw.gpu_inference);
+				let latents = new Float32Array(latents_buf);
+				for (let i = 0; i < latents.length; ++i) {
+					latents[i] = 0.18215 * latents[i];
+				}
 
-					let noise = new Float32Array(latents.length);
-					for (let i = 0; i < noise.length; ++i) noise[i] = Math.cos(2.0 * 3.14 * RandomNode.getFloat()) * Math.sqrt(-2.0 * Math.log(RandomNode.getFloat()));
-					let num_inference_steps = 50;
-					let init_timestep = Math.floor(num_inference_steps * strength);
-					let timesteps = TextToPhotoNode.timesteps[num_inference_steps - init_timestep];
-					let alphas_cumprod = TextToPhotoNode.alphas_cumprod;
-					let sqrt_alpha_prod = Math.pow(alphas_cumprod[timesteps], 0.5);
-					let sqrt_one_minus_alpha_prod = Math.pow(1.0 - alphas_cumprod[timesteps], 0.5);
-					for (let i = 0; i < latents.length; ++i) {
-						latents[i] = sqrt_alpha_prod * latents[i] + sqrt_one_minus_alpha_prod * noise[i];
-					}
-					let t_start = num_inference_steps - init_timestep;
+				let noise = new Float32Array(latents.length);
+				for (let i = 0; i < noise.length; ++i) noise[i] = Math.cos(2.0 * 3.14 * RandomNode.getFloat()) * Math.sqrt(-2.0 * Math.log(RandomNode.getFloat()));
+				let num_inference_steps = 50;
+				let init_timestep = Math.floor(num_inference_steps * strength);
+				let timesteps = TextToPhotoNode.timesteps[num_inference_steps - init_timestep];
+				let alphas_cumprod = TextToPhotoNode.alphas_cumprod;
+				let sqrt_alpha_prod = Math.pow(alphas_cumprod[timesteps], 0.5);
+				let sqrt_one_minus_alpha_prod = Math.pow(1.0 - alphas_cumprod[timesteps], 0.5);
+				for (let i = 0; i < latents.length; ++i) {
+					latents[i] = sqrt_alpha_prod * latents[i] + sqrt_one_minus_alpha_prod * noise[i];
+				}
+				let t_start = num_inference_steps - init_timestep;
 
-					TextToPhotoNode.stableDiffusion(VarianceNode.prompt, (_image: Image) => {
-						VarianceNode.image = _image;
-						done(VarianceNode.image);
-					}, latents, t_start);
-				});
+				TextToPhotoNode.stableDiffusion(VarianceNode.prompt, (_image: image_t) => {
+					VarianceNode.image = _image;
+					done(VarianceNode.image);
+				}, latents, t_start);
 			});
 		});
 	}
 
-	override getCachedImage = (): Image => {
+	override getCachedImage = (): image_t => {
 		return VarianceNode.image;
 	}
 
-	static def: TNode = {
+	static def: zui_node_t = {
 		id: 0,
 		name: _tr("Variance"),
 		type: "VarianceNode",

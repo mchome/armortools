@@ -7,7 +7,7 @@ class ExportObj {
 		}
 	}
 
-	static run = (path: string, paintObjects: TMeshObject[], applyDisplacement = false) => {
+	static run = (path: string, paintObjects: mesh_object_t[], applyDisplacement = false) => {
 		let o: i32[] = [];
 		ExportObj.writeString(o, "# armorpaint.org\n");
 
@@ -168,6 +168,6 @@ class ExportObj {
 		if (!path.endsWith(".obj")) path += ".obj";
 
 		let b = Uint8Array.from(o).buffer;
-		Krom.fileSaveBytes(path, b, b.byteLength);
+		krom_file_save_bytes(path, b, b.byteLength);
 	}
 }

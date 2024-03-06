@@ -19,7 +19,7 @@ class PhysicsBodyRaw {
 		else this._mass = f;
 	}
 
-	object: TBaseObject;
+	object: object_t;
 	friction = 0.5;
 	restitution = 0.0;
 	collisionMargin = 0.0;
@@ -62,11 +62,11 @@ class PhysicsBody {
 	static quat1: Ammo.btQuaternion;
 	static trans1: Ammo.btTransform;
 	static trans2: Ammo.btTransform;
-	static quat = Quat.create();
+	static quat = quat_create();
 
-	static convexHullCache = new Map<TMeshData, Ammo.btConvexHullShape>();
-	static triangleMeshCache = new Map<TMeshData, Ammo.btTriangleMesh>();
-	static usersCache = new Map<TMeshData, i32>();
+	static convexHullCache = new Map<mesh_data_t, Ammo.btConvexHullShape>();
+	static triangleMeshCache = new Map<mesh_data_t, Ammo.btTriangleMesh>();
+	static usersCache = new Map<mesh_data_t, i32>();
 
 	static create(): PhysicsBodyRaw {
 		if (PhysicsBody.first) {
@@ -86,12 +86,16 @@ class PhysicsBody {
 		return f - f * pb.collisionMargin;
 	}
 
-	static init = (pb: PhysicsBodyRaw, o: TBaseObject) => {
+	static init = (pb: PhysicsBodyRaw, o: object_t) => {
 		pb.object = o;
-		if (pb.ready) return;
+		if (pb.ready) {
+			return;
+		}
 		pb.ready = true;
 
-		if (pb.object.ext.constructor != TMeshObject) return; // No mesh data
+		if (pb.object.ext_type != "mesh_object_t") {
+			return; // No mesh data
+		}
 		let transform = o.transform;
 		let physics = PhysicsWorld.active;
 
@@ -170,11 +174,11 @@ class PhysicsBody {
 		}
 
 		PhysicsBody.trans1.setIdentity();
-		PhysicsBody.vec1.setX(Transform.worldx(transform));
-		PhysicsBody.vec1.setY(Transform.worldy(transform));
-		PhysicsBody.vec1.setZ(Transform.worldz(transform));
+		PhysicsBody.vec1.setX(transform_world_x(transform));
+		PhysicsBody.vec1.setY(transform_world_y(transform));
+		PhysicsBody.vec1.setZ(transform_world_z(transform));
 		PhysicsBody.trans1.setOrigin(PhysicsBody.vec1);
-		Quat.fromMat(PhysicsBody.quat, transform.world);
+		quat_from_mat(PhysicsBody.quat, transform.world);
 		PhysicsBody.quat1.setValue(PhysicsBody.quat.x, PhysicsBody.quat.y, PhysicsBody.quat.z, PhysicsBody.quat.w);
 		PhysicsBody.trans1.setRotation(PhysicsBody.quat1);
 		PhysicsBody.trans2.setIdentity();
@@ -185,7 +189,9 @@ class PhysicsBody {
 		PhysicsBody.vec1.setZ(0);
 		let inertia = PhysicsBody.vec1;
 
-		if (pb.mass > 0) pb.btshape.calculateLocalInertia(pb.mass, inertia);
+		if (pb.mass > 0) {
+			pb.btshape.calculateLocalInertia(pb.mass, inertia);
+		}
 		let bodyCI = new Ammo.btRigidBodyConstructionInfo(pb.mass, pb.motionState, pb.btshape, inertia);
 		pb.body = new Ammo.btRigidBody(bodyCI);
 
@@ -199,9 +205,15 @@ class PhysicsBody {
 		pb.body.setDamping(pb.linearDamping, pb.angularDamping);
 		PhysicsBody.setLinearFactor(pb, pb.linearFactors[0], pb.linearFactors[1], pb.linearFactors[2]);
 		PhysicsBody.setAngularFactor(pb, pb.angularFactors[0], pb.angularFactors[1], pb.angularFactors[2]);
-		if (pb.trigger) pb.body.setCollisionFlags(pb.body.getCollisionFlags() | CollisionFlags.CF_NO_CONTACT_RESPONSE);
-		if (pb.mass == 0.0) pb.body.setCollisionFlags(pb.body.getCollisionFlags() | CollisionFlags.CF_STATIC_OBJECT);
-		if (pb.ccd) PhysicsBody.setCcd(pb, transform.radius);
+		if (pb.trigger) {
+			pb.body.setCollisionFlags(pb.body.getCollisionFlags() | CollisionFlags.CF_NO_CONTACT_RESPONSE);
+		}
+		if (pb.mass == 0.0) {
+			pb.body.setCollisionFlags(pb.body.getCollisionFlags() | CollisionFlags.CF_STATIC_OBJECT);
+		}
+		if (pb.ccd) {
+			PhysicsBody.setCcd(pb, transform.radius);
+		}
 
 		pb.bodyScaleX = pb.currentScaleX = transform.scale.x;
 		pb.bodyScaleY = pb.currentScaleY = transform.scale.y;
@@ -218,7 +230,9 @@ class PhysicsBody {
 	}
 
 	static physicsUpdate = (pb: PhysicsBodyRaw) => {
-		if (!pb.ready) return;
+		if (!pb.ready) {
+			return;
+		}
 		let trans = pb.body.getWorldTransform();
 
 		let p = trans.getOrigin();
@@ -226,15 +240,15 @@ class PhysicsBody {
 		let qw: Ammo.btQuadWord = q;
 
 		let transform = pb.object.transform;
-		Vec4.set(transform.loc, p.x(), p.y(), p.z());
-		Quat.set(transform.rot, qw.x(), qw.y(), qw.z(), qw.w());
+		vec4_set(transform.loc, p.x(), p.y(), p.z());
+		quat_set(transform.rot, qw.x(), qw.y(), qw.z(), qw.w());
 		if (pb.object.parent != null) {
 			let ptransform = pb.object.parent.transform;
-			transform.loc.x -= Transform.worldx(ptransform);
-			transform.loc.y -= Transform.worldy(ptransform);
-			transform.loc.z -= Transform.worldz(ptransform);
+			transform.loc.x -= transform_world_x(ptransform);
+			transform.loc.y -= transform_world_y(ptransform);
+			transform.loc.z -= transform_world_z(ptransform);
 		}
-		Transform.buildMatrix(transform);
+		transform_build_matrix(transform);
 	}
 
 	static removeFromWorld = (pb: PhysicsBodyRaw) => {
@@ -245,12 +259,12 @@ class PhysicsBody {
 		pb.body.activate(false);
 	}
 
-	static setGravity = (pb: PhysicsBodyRaw, v: TVec4) => {
+	static setGravity = (pb: PhysicsBodyRaw, v: vec4_t) => {
 		PhysicsBody.vec1.setValue(v.x, v.y, v.z);
 		pb.body.setGravity(PhysicsBody.vec1);
 	}
 
-	static applyForce = (pb: PhysicsBodyRaw, force: TVec4, loc: TVec4 = null) => {
+	static applyForce = (pb: PhysicsBodyRaw, force: vec4_t, loc: vec4_t = null) => {
 		PhysicsBody.activate(pb);
 		PhysicsBody.vec1.setValue(force.x, force.y, force.z);
 		if (loc == null) {
@@ -262,7 +276,7 @@ class PhysicsBody {
 		}
 	}
 
-	static applyImpulse = (pb: PhysicsBodyRaw, impulse: TVec4, loc: TVec4 = null) => {
+	static applyImpulse = (pb: PhysicsBodyRaw, impulse: vec4_t, loc: vec4_t = null) => {
 		PhysicsBody.activate(pb);
 		PhysicsBody.vec1.setValue(impulse.x, impulse.y, impulse.z);
 		if (loc == null) {
@@ -274,13 +288,13 @@ class PhysicsBody {
 		}
 	}
 
-	static applyTorque = (pb: PhysicsBodyRaw, torque: TVec4) => {
+	static applyTorque = (pb: PhysicsBodyRaw, torque: vec4_t) => {
 		PhysicsBody.activate(pb);
 		PhysicsBody.vec1.setValue(torque.x, torque.y, torque.z);
 		pb.body.applyTorque(PhysicsBody.vec1);
 	}
 
-	static applyTorqueImpulse = (pb: PhysicsBodyRaw, torque: TVec4) => {
+	static applyTorqueImpulse = (pb: PhysicsBodyRaw, torque: vec4_t) => {
 		PhysicsBody.activate(pb);
 		PhysicsBody.vec1.setValue(torque.x, torque.y, torque.z);
 		pb.body.applyTorqueImpulse(PhysicsBody.vec1);
@@ -296,9 +310,9 @@ class PhysicsBody {
 		pb.body.setAngularFactor(PhysicsBody.vec1);
 	}
 
-	static getLinearVelocity = (pb: PhysicsBodyRaw): TVec4 => {
+	static getLinearVelocity = (pb: PhysicsBodyRaw): vec4_t => {
 		let v = pb.body.getLinearVelocity();
-		return Vec4.create(v.x(), v.y(), v.z());
+		return vec4_create(v.x(), v.y(), v.z());
 	}
 
 	static setLinearVelocity = (pb: PhysicsBodyRaw, x: f32, y: f32, z: f32) => {
@@ -306,9 +320,9 @@ class PhysicsBody {
 		pb.body.setLinearVelocity(PhysicsBody.vec1);
 	}
 
-	static getAngularVelocity = (pb: PhysicsBodyRaw): TVec4 => {
+	static getAngularVelocity = (pb: PhysicsBodyRaw): vec4_t => {
 		let v = pb.body.getAngularVelocity();
-		return Vec4.create(v.x(), v.y(), v.z());
+		return vec4_create(v.x(), v.y(), v.z());
 	}
 
 	static setAngularVelocity = (pb: PhysicsBodyRaw, x: f32, y: f32, z: f32) => {
@@ -321,7 +335,7 @@ class PhysicsBody {
 		pb.friction = f;
 	}
 
-	static setScale = (pb: PhysicsBodyRaw, v: TVec4) => {
+	static setScale = (pb: PhysicsBodyRaw, v: vec4_t) => {
 		pb.currentScaleX = v.x;
 		pb.currentScaleY = v.y;
 		pb.currentScaleZ = v.z;
@@ -336,14 +350,16 @@ class PhysicsBody {
 
 	static syncTransform = (pb: PhysicsBodyRaw) => {
 		let t = pb.object.transform;
-		Transform.buildMatrix(t);
-		PhysicsBody.vec1.setValue(Transform.worldx(t), Transform.worldy(t), Transform.worldz(t));
+		transform_build_matrix(t);
+		PhysicsBody.vec1.setValue(transform_world_x(t), transform_world_y(t), transform_world_z(t));
 		PhysicsBody.trans1.setOrigin(PhysicsBody.vec1);
-		Quat.fromMat(PhysicsBody.quat, t.world);
+		quat_from_mat(PhysicsBody.quat, t.world);
 		PhysicsBody.quat1.setValue(PhysicsBody.quat.x, PhysicsBody.quat.y, PhysicsBody.quat.z, PhysicsBody.quat.w);
 		PhysicsBody.trans1.setRotation(PhysicsBody.quat1);
 		pb.body.setWorldTransform(PhysicsBody.trans1);
-		if (pb.currentScaleX != t.scale.x || pb.currentScaleY != t.scale.y || pb.currentScaleZ != t.scale.z) PhysicsBody.setScale(pb, t.scale);
+		if (pb.currentScaleX != t.scale.x || pb.currentScaleY != t.scale.y || pb.currentScaleZ != t.scale.z) {
+			PhysicsBody.setScale(pb, t.scale);
+		}
 		PhysicsBody.activate(pb);
 	}
 
@@ -352,7 +368,7 @@ class PhysicsBody {
 		pb.body.setCcdMotionThreshold(motionThreshold);
 	}
 
-	static fillConvexHull = (pb: PhysicsBodyRaw, scale: TVec4, margin: f32): Ammo.btConvexHullShape => {
+	static fillConvexHull = (pb: PhysicsBodyRaw, scale: vec4_t, margin: f32): Ammo.btConvexHullShape => {
 		// Check whether shape already exists
 		let data = pb.object.ext.data;
 		let shape = PhysicsBody.convexHullCache.get(data);
@@ -365,7 +381,7 @@ class PhysicsBody {
 		PhysicsBody.convexHullCache.set(data, shape);
 		PhysicsBody.usersCache.set(data, 1);
 
-		let positions = MeshData.getVArray(data, 'pos').values;
+		let positions = mesh_data_get_vertex_array(data, 'pos').values;
 
 		let sx: f32 = scale.x * (1.0 - margin) * (1 / 32767);
 		let sy: f32 = scale.y * (1.0 - margin) * (1 / 32767);
@@ -384,7 +400,7 @@ class PhysicsBody {
 		return shape;
 	}
 
-	static fillTriangleMesh = (pb: PhysicsBodyRaw, scale: TVec4): Ammo.btTriangleMesh => {
+	static fillTriangleMesh = (pb: PhysicsBodyRaw, scale: vec4_t): Ammo.btTriangleMesh => {
 		// Check whether shape already exists
 		let data = pb.object.ext.data;
 		let triangleMesh = PhysicsBody.triangleMeshCache.get(data);
@@ -397,7 +413,7 @@ class PhysicsBody {
 		PhysicsBody.triangleMeshCache.set(data, triangleMesh);
 		PhysicsBody.usersCache.set(data, 1);
 
-		let positions = MeshData.getVArray(data, 'pos').values;
+		let positions = mesh_data_get_vertex_array(data, 'pos').values;
 		let indices = data._indices;
 
 		let sx: f32 = scale.x * (1 / 32767);

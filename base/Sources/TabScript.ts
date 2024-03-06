@@ -1,22 +1,22 @@
 
 class TabScript {
 
-	static hscript = new Handle();
-	static textColoring: TTextColoring = null;
+	static hscript = zui_handle_create();
+	static textColoring: zui_text_coloring_t = null;
 
-	static draw = (htab: Handle) => {
+	static draw = (htab: zui_handle_t) => {
 		let ui = UIBase.ui;
 		let statush = Config.raw.layout[LayoutSize.LayoutStatusH];
-		if (ui.tab(htab, tr("Script")) && statush > UIStatus.defaultStatusH * ui.SCALE()) {
+		if (zui_tab(htab, tr("Script")) && statush > UIStatus.defaultStatusH * zui_SCALE(ui)) {
 
-			ui.beginSticky();
+			zui_begin_sticky();
 			if (Config.raw.touch_ui) {
-				ui.row([1 / 4, 1 / 4, 1 / 4, 1 / 4]);
+				zui_row([1 / 4, 1 / 4, 1 / 4, 1 / 4]);
 			}
 			else {
-				ui.row([1 / 14, 1 / 14, 1 / 14, 1 / 14]);
+				zui_row([1 / 14, 1 / 14, 1 / 14, 1 / 14]);
 			}
-			if (ui.button(tr("Run"))) {
+			if (zui_button(tr("Run"))) {
 				try {
 					eval(TabScript.hscript.text);
 				}
@@ -24,52 +24,53 @@ class TabScript {
 					Console.log(e);
 				}
 			}
-			if (ui.button(tr("Clear"))) {
+			if (zui_button(tr("Clear"))) {
 				TabScript.hscript.text = "";
 			}
-			if (ui.button(tr("Import"))) {
+			if (zui_button(tr("Import"))) {
 				UIFiles.show("js", false, false, (path: string) => {
-					Data.getBlob(path, (b: ArrayBuffer) => {
-						TabScript.hscript.text = System.bufferToString(b);
-						Data.deleteBlob(path);
-					});
+					let b: ArrayBuffer = data_get_blob(path);
+					TabScript.hscript.text = sys_buffer_to_string(b);
+					data_delete_blob(path);
 				});
 			}
-			if (ui.button(tr("Export"))) {
+			if (zui_button(tr("Export"))) {
 				let str = TabScript.hscript.text;
 				UIFiles.show("js", true, false, (path: string) => {
 					let f = UIFiles.filename;
 					if (f == "") f = tr("untitled");
 					path = path + Path.sep + f;
 					if (!path.endsWith(".js")) path += ".js";
-					Krom.fileSaveBytes(path, System.stringToBuffer(str));
+					krom_file_save_bytes(path, sys_string_to_buffer(str));
 				});
 			}
-			ui.endSticky();
+			zui_end_sticky();
 
 			let _font = ui.font;
-			let _fontSize = ui.fontSize;
-			Data.getFont("font_mono.ttf", (f: Font) => { ui.setFont(f); }); // Sync
-			ui.fontSize = Math.floor(15 * ui.SCALE());
-			Zui.textAreaLineNumbers = true;
-			Zui.textAreaScrollPastEnd = true;
-			Zui.textAreaColoring = TabScript.getTextColoring();
-			ui.textArea(TabScript.hscript);
-			Zui.textAreaLineNumbers = false;
-			Zui.textAreaScrollPastEnd = false;
-			Zui.textAreaColoring = null;
-			ui.setFont(_font);
-			ui.fontSize = _fontSize;
+			let _fontSize = ui.font_size;
+			let f: g2_font_t = data_get_font("font_mono.ttf");
+			zui_set_font(ui, f);
+			ui.font_size = Math.floor(15 * zui_SCALE(ui));
+			zui_set_text_area_line_numbers(true);
+			zui_set_text_area_scroll_past_end(true);
+			zui_set_text_area_coloring(TabScript.getTextColoring());
+			zui_text_area(TabScript.hscript);
+			zui_set_text_area_line_numbers(false);
+			zui_set_text_area_scroll_past_end(false);
+			zui_set_text_area_coloring(null);
+			zui_set_font(ui, _font);
+			ui.font_size = _fontSize;
 		}
 	}
 
-	static getTextColoring = (): TTextColoring => {
+	static getTextColoring = (): zui_text_coloring_t => {
 		if (TabScript.textColoring == null) {
-			Data.getBlob("text_coloring.json", (blob: ArrayBuffer) => {
-				TabScript.textColoring = JSON.parse(System.bufferToString(blob));
-				TabScript.textColoring.default_color = Math.floor(TabScript.textColoring.default_color);
-				for (let coloring of TabScript.textColoring.colorings) coloring.color = Math.floor(coloring.color);
-			});
+			let blob: ArrayBuffer = data_get_blob("text_coloring.json");
+			TabScript.textColoring = JSON.parse(sys_buffer_to_string(blob));
+			TabScript.textColoring.default_color = Math.floor(TabScript.textColoring.default_color);
+			for (let coloring of TabScript.textColoring.colorings) {
+				coloring.color = Math.floor(coloring.color);
+			}
 		}
 		return TabScript.textColoring;
 	}

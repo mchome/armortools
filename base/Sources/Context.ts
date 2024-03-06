@@ -75,14 +75,14 @@ class Context {
 		Context.raw.layer = l;
 		UIHeader.headerHandle.redraws = 2;
 
-		let current = Graphics2.current;
-		if (current != null) current.end();
+		let current = _g2_current;
+		if (current != null) g2_end();
 
 		Base.setObjectMask();
 		MakeMaterial.parseMeshMaterial();
 		MakeMaterial.parsePaintMaterial();
 
-		if (current != null) current.begin(false);
+		if (current != null) g2_begin(current);
 
 		UIBase.hwnds[TabArea.TabSidebar0].redraws = 2;
 		UIView2D.hwnd.redraws = 2;
@@ -141,7 +141,7 @@ class Context {
 	}
 	///end
 
-	static selectPaintObject = (o: TMeshObject) => {
+	static selectPaintObject = (o: mesh_object_t) => {
 		///if (is_paint || is_sculpt)
 		UIHeader.headerHandle.redraws = 2;
 		for (let p of Project.paintObjects) p.skip_context = "paint";
@@ -163,7 +163,7 @@ class Context {
 		///end
 	}
 
-	static mainObject = (): TMeshObject => {
+	static mainObject = (): mesh_object_t => {
 		///if (is_paint || is_sculpt)
 		for (let po of Project.paintObjects) if (po.base.children.length > 0) return po;
 		return Project.paintObjects[0];
@@ -201,10 +201,10 @@ class Context {
 
 	static inPaintArea = (): bool => {
 		///if (is_paint || is_sculpt)
-		let right = App.w();
+		let right = app_w();
 		if (UIView2D.show) right += UIView2D.ww;
-		return Mouse.viewX > 0 && Mouse.viewX < right &&
-			   Mouse.viewY > 0 && Mouse.viewY < App.h();
+		return mouse_view_x() > 0 && mouse_view_x() < right &&
+			   mouse_view_y() > 0 && mouse_view_y() < app_h();
 		///end
 
 		///if is_lab
@@ -213,33 +213,33 @@ class Context {
 	}
 
 	static inLayers = (): bool => {
-		return UIBase.ui.getHoveredTabName() == tr("Layers");
+		return zui_get_hovered_tab_name() == tr("Layers");
 	}
 
 	static inMaterials = (): bool => {
-		return UIBase.ui.getHoveredTabName() == tr("Materials");
+		return zui_get_hovered_tab_name() == tr("Materials");
 	}
 
 	///if (is_paint || is_sculpt)
 	static in2dView = (type = View2DType.View2DLayer): bool => {
 		return UIView2D.show && UIView2D.type == type &&
-			   Mouse.x > UIView2D.wx && Mouse.x < UIView2D.wx + UIView2D.ww &&
-			   Mouse.y > UIView2D.wy && Mouse.y < UIView2D.wy + UIView2D.wh;
+			   mouse_x > UIView2D.wx && mouse_x < UIView2D.wx + UIView2D.ww &&
+			   mouse_y > UIView2D.wy && mouse_y < UIView2D.wy + UIView2D.wh;
 	}
 	///end
 
 	static inNodes = (): bool => {
 		return UINodes.show &&
-			   Mouse.x > UINodes.wx && Mouse.x < UINodes.wx + UINodes.ww &&
-			   Mouse.y > UINodes.wy && Mouse.y < UINodes.wy + UINodes.wh;
+			   mouse_x > UINodes.wx && mouse_x < UINodes.wx + UINodes.ww &&
+			   mouse_y > UINodes.wy && mouse_y < UINodes.wy + UINodes.wh;
 	}
 
 	static inSwatches = (): bool => {
-		return UIBase.ui.getHoveredTabName() == tr("Swatches");
+		return zui_get_hovered_tab_name() == tr("Swatches");
 	}
 
 	static inBrowser = (): bool => {
-		return UIBase.ui.getHoveredTabName() == tr("Browser");
+		return zui_get_hovered_tab_name() == tr("Browser");
 	}
 
 	static getAreaType = (): AreaType => {
@@ -259,10 +259,10 @@ class Context {
 
 		Context.raw.viewportMode = mode;
 		if (Context.useDeferred()) {
-			RenderPath.commands = RenderPathDeferred.commands;
+			render_path_commands = RenderPathDeferred.commands;
 		}
 		else {
-			RenderPath.commands = RenderPathForward.commands;
+			render_path_commands = RenderPathForward.commands;
 		}
 		let _workspace = UIHeader.worktab.position;
 		UIHeader.worktab.position = 0;
@@ -274,18 +274,18 @@ class Context {
 		if (!Context.raw.envmapLoaded) {
 			// TODO: Unable to share texture for both radiance and envmap - reload image
 			Context.raw.envmapLoaded = true;
-			Data.cachedImages.delete("World_radiance.k");
+			data_cached_images.delete("World_radiance.k");
 		}
-		WorldData.loadEnvmap(Scene.world, (_) => {});
-		if (Context.raw.savedEnvmap == null) Context.raw.savedEnvmap = Scene.world._envmap;
+		world_data_load_envmap(scene_world, (_) => {});
+		if (Context.raw.savedEnvmap == null) Context.raw.savedEnvmap = scene_world._.envmap;
 	}
 
 	static updateEnvmap = () => {
 		if (Context.raw.showEnvmap) {
-			Scene.world._envmap = Context.raw.showEnvmapBlur ? Scene.world._radianceMipmaps[0] : Context.raw.savedEnvmap;
+			scene_world._.envmap = Context.raw.showEnvmapBlur ? scene_world._.radiance_mipmaps[0] : Context.raw.savedEnvmap;
 		}
 		else {
-			Scene.world._envmap = Context.raw.emptyEnvmap;
+			scene_world._.envmap = Context.raw.emptyEnvmap;
 		}
 	}
 
@@ -296,12 +296,12 @@ class Context {
 
 	static setRenderPath = () => {
 		if (Context.raw.renderMode == RenderMode.RenderForward || Context.raw.viewportShader != null) {
-			RenderPath.commands = RenderPathForward.commands;
+			render_path_commands = RenderPathForward.commands;
 		}
 		else {
-			RenderPath.commands = RenderPathDeferred.commands;
+			render_path_commands = RenderPathDeferred.commands;
 		}
-		App.notifyOnInit(() => {
+		app_notify_on_init(() => {
 			MakeMaterial.parseMeshMaterial();
 		});
 	}
@@ -339,7 +339,7 @@ class Context {
 
 		let nodes = UINodes.getNodes();
 		let canvas = UINodes.getCanvas(true);
-		let inpaint = nodes.nodesSelectedId.length > 0 && nodes.getNode(canvas.nodes, nodes.nodesSelectedId[0]).type == "InpaintNode";
+		let inpaint = nodes.nodesSelectedId.length > 0 && zui_get_node(canvas.nodes, nodes.nodesSelectedId[0]).type == "InpaintNode";
 
 		// Paint bounds
 		if (inpaint &&
@@ -352,7 +352,7 @@ class Context {
 			!Base.isScrolling() &&
 			!Base.isComboSelected()) {
 
-			let down = Mouse.down() || Pen.down();
+			let down = mouse_down() || pen_down();
 
 			// Prevent painting the same spot
 			let sameSpot = Context.raw.paintVec.x == Context.raw.lastPaintX && Context.raw.paintVec.y == Context.raw.lastPaintY;
@@ -379,27 +379,27 @@ class Context {
 	static parseBrushInputs = () => {
 		if (!Context.raw.registered) {
 			Context.raw.registered = true;
-			App.notifyOnUpdate(Context.update);
+			app_notify_on_update(Context.update);
 		}
 
 		Context.raw.paintVec = Context.raw.coords;
 	}
 
 	static update = () => {
-		let paintX = Mouse.viewX / App.w();
-		let paintY = Mouse.viewY / App.h();
-		if (Mouse.started()) {
-			Context.raw.startX = Mouse.viewX / App.w();
-			Context.raw.startY = Mouse.viewY / App.h();
+		let paintX = mouse_view_x() / app_w();
+		let paintY = mouse_view_y() / app_h();
+		if (mouse_started()) {
+			Context.raw.startX = mouse_view_x() / app_w();
+			Context.raw.startY = mouse_view_y() / app_h();
 		}
 
-		if (Pen.down()) {
-			paintX = Pen.viewX / App.w();
-			paintY = Pen.viewY / App.h();
+		if (pen_down()) {
+			paintX = pen_view_x() / app_w();
+			paintY = pen_view_y() / app_h();
 		}
-		if (Pen.started()) {
-			Context.raw.startX = Pen.viewX / App.w();
-			Context.raw.startY = Pen.viewY / App.h();
+		if (pen_started()) {
+			Context.raw.startX = pen_view_x() / app_w();
+			Context.raw.startY = pen_view_y() / app_h();
 		}
 
 		if (Operator.shortcut(Config.keymap.brush_ruler + "+" + Config.keymap.action_paint, ShortcutType.ShortcutDown)) {
@@ -411,20 +411,20 @@ class Context {
 		Context.raw.coords.y = paintY;
 
 		if (Context.raw.lockBegin) {
-			let dx = Math.abs(Context.raw.lockStartX - Mouse.viewX);
-			let dy = Math.abs(Context.raw.lockStartY - Mouse.viewY);
+			let dx = Math.abs(Context.raw.lockStartX - mouse_view_x());
+			let dy = Math.abs(Context.raw.lockStartY - mouse_view_y());
 			if (dx > 1 || dy > 1) {
 				Context.raw.lockBegin = false;
 				dx > dy ? Context.raw.lockY = true : Context.raw.lockX = true;
 			}
 		}
 
-		if (Keyboard.started(Config.keymap.brush_ruler)) {
-			Context.raw.lockStartX = Mouse.viewX;
-			Context.raw.lockStartY = Mouse.viewY;
+		if (keyboard_started(Config.keymap.brush_ruler)) {
+			Context.raw.lockStartX = mouse_view_x();
+			Context.raw.lockStartY = mouse_view_y();
 			Context.raw.lockBegin = true;
 		}
-		else if (Keyboard.released(Config.keymap.brush_ruler)) {
+		else if (keyboard_released(Config.keymap.brush_ruler)) {
 			Context.raw.lockX = Context.raw.lockY = Context.raw.lockBegin = false;
 		}
 

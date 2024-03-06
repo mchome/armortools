@@ -1,6 +1,6 @@
 
 class PluginRaw {
-	drawUI: (ui: Zui)=>void = null;
+	drawUI: (ui: zui_t)=>void = null;
 	draw: ()=>void = null;
 	update: ()=>void = null;
 	delete: ()=>void = null;
@@ -23,16 +23,15 @@ class Plugin {
 
 	static start = (plugin: string) => {
 		try {
-			Data.getBlob("plugins/" + plugin, (blob: ArrayBuffer) => {
-				Plugin.pluginName = plugin;
-				// (1, eval)(System.bufferToString(blob)); // Global scope
-				eval(System.bufferToString(blob)); // Local scope
-				Data.deleteBlob("plugins/" + plugin);
-			});
+			let blob: ArrayBuffer = data_get_blob("plugins/" + plugin);
+			Plugin.pluginName = plugin;
+			// (1, eval)(sys_buffer_to_string(blob)); // Global scope
+			eval(sys_buffer_to_string(blob)); // Local scope
+			data_delete_blob("plugins/" + plugin);
 		}
 		catch (e: any) {
 			Console.error(tr("Failed to load plugin") + " '" + plugin + "'");
-			Krom.log(e);
+			krom_log(e);
 		}
 	}
 

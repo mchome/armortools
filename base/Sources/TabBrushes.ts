@@ -3,77 +3,77 @@
 
 class TabBrushes {
 
-	static draw = (htab: Handle) => {
+	static draw = (htab: zui_handle_t) => {
 		let ui = UIBase.ui;
-		if (ui.tab(htab, tr("Brushes"))) {
-			ui.beginSticky();
-			ui.row([1 / 4, 1 / 4, 1 / 4]);
-			if (ui.button(tr("New"))) {
+		if (zui_tab(htab, tr("Brushes"))) {
+			zui_begin_sticky();
+			zui_row([1 / 4, 1 / 4, 1 / 4]);
+			if (zui_button(tr("New"))) {
 				Context.raw.brush = SlotBrush.create();
 				Project.brushes.push(Context.raw.brush);
 				MakeMaterial.parseBrush();
 				UINodes.hwnd.redraws = 2;
 			}
-			if (ui.button(tr("Import"))) {
+			if (zui_button(tr("Import"))) {
 				Project.importBrush();
 			}
-			if (ui.button(tr("Nodes"))) {
+			if (zui_button(tr("Nodes"))) {
 				UIBase.showBrushNodes();
 			}
-			ui.endSticky();
-			ui.separator(3, false);
+			zui_end_sticky();
+			zui_separator(3, false);
 
-			let slotw = Math.floor(51 * ui.SCALE());
+			let slotw = Math.floor(51 * zui_SCALE(ui));
 			let num = Math.floor(Config.raw.layout[LayoutSize.LayoutSidebarW] / slotw);
 
 			for (let row = 0; row < Math.floor(Math.ceil(Project.brushes.length / num)); ++row) {
 				let mult = Config.raw.show_asset_names ? 2 : 1;
 				let ar = [];
 				for (let i = 0; i < num * mult; ++i) ar.push(1 / num);
-				ui.row(ar);
+				zui_row(ar);
 
 				ui._x += 2;
-				let off = Config.raw.show_asset_names ? ui.ELEMENT_OFFSET() * 10.0 : 6;
+				let off = Config.raw.show_asset_names ? zui_ELEMENT_OFFSET(ui) * 10.0 : 6;
 				if (row > 0) ui._y += off;
 
 				for (let j = 0; j < num; ++j) {
-					let imgw = Math.floor(50 * ui.SCALE());
+					let imgw = Math.floor(50 * zui_SCALE(ui));
 					let i = j + row * num;
 					if (i >= Project.brushes.length) {
-						ui.endElement(imgw);
-						if (Config.raw.show_asset_names) ui.endElement(0);
+						zui_end_element(imgw);
+						if (Config.raw.show_asset_names) zui_end_element(0);
 						continue;
 					}
-					let img = ui.SCALE() > 1 ? Project.brushes[i].image : Project.brushes[i].imageIcon;
+					let img = zui_SCALE(ui) > 1 ? Project.brushes[i].image : Project.brushes[i].imageIcon;
 					let imgFull = Project.brushes[i].image;
 
 					if (Context.raw.brush == Project.brushes[i]) {
-						// ui.fill(1, -2, img.width + 3, img.height + 3, ui.t.HIGHLIGHT_COL); // TODO
+						// Zui.fill(1, -2, img.width + 3, img.height + 3, ui.t.HIGHLIGHT_COL); // TODO
 						let off = row % 2 == 1 ? 1 : 0;
 						let w = 50;
 						if (Config.raw.window_scale > 1) w += Math.floor(Config.raw.window_scale * 2);
-						ui.fill(-1,         -2, w + 3,       2, ui.t.HIGHLIGHT_COL);
-						ui.fill(-1,    w - off, w + 3, 2 + off, ui.t.HIGHLIGHT_COL);
-						ui.fill(-1,         -2,     2,   w + 3, ui.t.HIGHLIGHT_COL);
-						ui.fill(w + 1,      -2,     2,   w + 4, ui.t.HIGHLIGHT_COL);
+						zui_fill(-1,         -2, w + 3,       2, ui.t.HIGHLIGHT_COL);
+						zui_fill(-1,    w - off, w + 3, 2 + off, ui.t.HIGHLIGHT_COL);
+						zui_fill(-1,         -2,     2,   w + 3, ui.t.HIGHLIGHT_COL);
+						zui_fill(w + 1,      -2,     2,   w + 4, ui.t.HIGHLIGHT_COL);
 					}
 
 					let uix = ui._x;
 					//let uiy = ui._y;
-					let tile = ui.SCALE() > 1 ? 100 : 50;
-					let state = Project.brushes[i].previewReady ? ui.image(img) : ui.image(Res.get("icons.k"), -1, null, tile * 5, tile, tile, tile);
+					let tile = zui_SCALE(ui) > 1 ? 100 : 50;
+					let state = Project.brushes[i].previewReady ? zui_image(img) : zui_image(Res.get("icons.k"), -1, null, tile * 5, tile, tile, tile);
 					if (state == State.Started) {
 						if (Context.raw.brush != Project.brushes[i]) Context.selectBrush(i);
-						if (Time.time() - Context.raw.selectTime < 0.25) UIBase.showBrushNodes();
-						Context.raw.selectTime = Time.time();
-						// App.dragOffX = -(Mouse.x - uix - ui._windowX - 3);
-						// App.dragOffY = -(Mouse.y - uiy - ui._windowY + 1);
-						// App.dragBrush = Context.raw.brush;
+						if (time_time() - Context.raw.selectTime < 0.25) UIBase.showBrushNodes();
+						Context.raw.selectTime = time_time();
+						// app_drag_off_x = -(mouse_x - uix - ui._windowX - 3);
+						// app_drag_off_y = -(mouse_y - uiy - ui._windowY + 1);
+						// app_drag_brush = Context.raw.brush;
 					}
-					if (ui.isHovered && ui.inputReleasedR) {
+					if (ui.is_hovered && ui.input_released_r) {
 						Context.selectBrush(i);
 						let add = Project.brushes.length > 1 ? 1 : 0;
-						UIMenu.draw((ui: Zui) => {
+						UIMenu.draw((ui: zui_t) => {
 							//let b = Project.brushes[i];
 
 							if (UIMenu.menuButton(ui, tr("Export"))) {
@@ -90,7 +90,7 @@ class TabBrushes {
 									Context.setBrush(Context.raw.brush);
 									UtilRender.makeBrushPreview();
 								}
-								App.notifyOnInit(_init);
+								app_notify_on_init(_init);
 							}
 
 							if (Project.brushes.length > 1 && UIMenu.menuButton(ui, tr("Delete"), "delete")) {
@@ -99,9 +99,9 @@ class TabBrushes {
 						}, 2 + add);
 					}
 
-					if (ui.isHovered) {
+					if (ui.is_hovered) {
 						if (imgFull == null) {
-							App.notifyOnInit(() => {
+							app_notify_on_init(() => {
 								let _brush = Context.raw.brush;
 								Context.raw.brush = Project.brushes[i];
 								MakeMaterial.parseBrush();
@@ -110,19 +110,19 @@ class TabBrushes {
 							});
 						}
 						else {
-							ui.tooltipImage(imgFull);
-							ui.tooltip(Project.brushes[i].canvas.name);
+							zui_tooltip_image(imgFull);
+							zui_tooltip(Project.brushes[i].canvas.name);
 						}
 					}
 
 					if (Config.raw.show_asset_names) {
 						ui._x = uix;
 						ui._y += slotw * 0.9;
-						ui.text(Project.brushes[i].canvas.name, Align.Center);
-						if (ui.isHovered) ui.tooltip(Project.brushes[i].canvas.name);
+						zui_text(Project.brushes[i].canvas.name, Align.Center);
+						if (ui.is_hovered) zui_tooltip(Project.brushes[i].canvas.name);
 						ui._y -= slotw * 0.9;
 						if (i == Project.brushes.length - 1) {
-							ui._y += j == num - 1 ? imgw : imgw + ui.ELEMENT_H() + ui.ELEMENT_OFFSET();
+							ui._y += j == num - 1 ? imgw : imgw + zui_ELEMENT_H(ui) + zui_ELEMENT_OFFSET(ui);
 						}
 					}
 				}
@@ -130,10 +130,10 @@ class TabBrushes {
 				ui._y += 6;
 			}
 
-			let inFocus = ui.inputX > ui._windowX && ui.inputX < ui._windowX + ui._windowW &&
-						  ui.inputY > ui._windowY && ui.inputY < ui._windowY + ui._windowH;
-			if (inFocus && ui.isDeleteDown && Project.brushes.length > 1) {
-				ui.isDeleteDown = false;
+			let inFocus = ui.input_x > ui._window_x && ui.input_x < ui._window_x + ui._window_w &&
+						  ui.input_y > ui._window_y && ui.input_y < ui._window_y + ui._window_h;
+			if (inFocus && ui.is_delete_down && Project.brushes.length > 1) {
+				ui.is_delete_down = false;
 				TabBrushes.deleteBrush(Context.raw.brush);
 			}
 		}

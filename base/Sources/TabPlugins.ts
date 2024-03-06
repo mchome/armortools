@@ -1,24 +1,24 @@
 
 class TabPlugins {
 
-	static draw = (htab: Handle) => {
+	static draw = (htab: zui_handle_t) => {
 		let ui = UIBase.ui;
-		if (ui.tab(htab, tr("Plugins"))) {
+		if (zui_tab(htab, tr("Plugins"))) {
 
-			ui.beginSticky();
+			zui_begin_sticky();
 
 			///if (is_paint || is_sculpt)
-			ui.row([1 / 4]);
+			zui_row([1 / 4]);
 			///end
 			///if is_lab
-			ui.row([1 / 14]);
+			zui_row([1 / 14]);
 			///end
 
-			if (ui.button(tr("Manager"))) {
+			if (zui_button(tr("Manager"))) {
 				BoxPreferences.htab.position = 6; // Plugins
 				BoxPreferences.show();
 			}
-			ui.endSticky();
+			zui_end_sticky();
 
 			// Draw plugins
 			for (let p of Plugin.plugins.values()) if (p.drawUI != null) p.drawUI(ui);

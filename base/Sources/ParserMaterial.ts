@@ -21,13 +21,13 @@ class ParserMaterial {
 	static vert: NodeShaderRaw;
 	static frag: NodeShaderRaw;
 	static curshader: NodeShaderRaw;
-	static matcon: TMaterialContext;
+	static matcon: material_context_t;
 	static parsed: string[];
-	static parents: TNode[];
+	static parents: zui_node_t[];
 
-	static canvases: TNodeCanvas[];
-	static nodes: TNode[];
-	static links: TNodeLink[];
+	static canvases: zui_node_canvas_t[];
+	static nodes: zui_node_t[];
+	static links: zui_node_link_t[];
 
 	static cotangentFrameWritten: bool;
 	static tex_coord = "texCoord";
@@ -52,26 +52,26 @@ class ParserMaterial {
 	static bake_passthrough_strength = "0.0";
 	static bake_passthrough_radius = "0.0";
 	static bake_passthrough_offset = "0.0";
-	static start_group: TNodeCanvas = null;
-	static start_parents: TNode[] = null;
-	static start_node: TNode = null;
+	static start_group: zui_node_canvas_t = null;
+	static start_parents: zui_node_t[] = null;
+	static start_node: zui_node_t = null;
 
 	static arm_export_tangents = true;
 	static out_normaltan: string; // Raw tangent space normal parsed from normal map
 
 	static script_links: Map<string, string> = null;
 
-	static getNode = (id: i32): TNode => {
+	static getNode = (id: i32): zui_node_t => {
 		for (let n of ParserMaterial.nodes) if (n.id == id) return n;
 		return null;
 	}
 
-	static getLink = (id: i32): TNodeLink => {
+	static getLink = (id: i32): zui_node_link_t => {
 		for (let l of ParserMaterial.links) if (l.id == id) return l;
 		return null;
 	}
 
-	static getInputLink = (inp: TNodeSocket): TNodeLink => {
+	static getInputLink = (inp: zui_node_socket_t): zui_node_link_t => {
 		for (let l of ParserMaterial.links) {
 			if (l.to_id == inp.node_id) {
 				let node = ParserMaterial.getNode(inp.node_id);
@@ -82,8 +82,8 @@ class ParserMaterial {
 		return null;
 	}
 
-	static getOutputLinks = (out: TNodeSocket): TNodeLink[] => {
-		let ls: TNodeLink[] = null;
+	static getOutputLinks = (out: zui_node_socket_t): zui_node_link_t[] => {
+		let ls: zui_node_link_t[] = null;
 		for (let l of ParserMaterial.links) {
 			if (l.from_id == out.node_id) {
 				let node = ParserMaterial.getNode(out.node_id);
@@ -106,8 +106,8 @@ class ParserMaterial {
 		ParserMaterial.parsing_basecolor = false;
 	}
 
-	static parse = (canvas: TNodeCanvas, _con: NodeShaderContextRaw, _vert: NodeShaderRaw, _frag: NodeShaderRaw, _matcon: TMaterialContext): TShaderOut => {
-		Nodes.updateCanvasFormat(canvas);
+	static parse = (canvas: zui_node_canvas_t, _con: NodeShaderContextRaw, _vert: NodeShaderRaw, _frag: NodeShaderRaw, _matcon: material_context_t): TShaderOut => {
+		zui_nodes_update_canvas_format(canvas);
 		ParserMaterial.init();
 		ParserMaterial.canvases = [canvas];
 		ParserMaterial.nodes = canvas.nodes;
@@ -124,7 +124,7 @@ class ParserMaterial {
 		}
 
 		if (ParserMaterial.start_node != null) {
-			let link: TNodeLink = { id: 99999, from_id: ParserMaterial.start_node.id, from_socket: 0, to_id: -1, to_socket: -1 };
+			let link: zui_node_link_t = { id: 99999, from_id: ParserMaterial.start_node.id, from_socket: 0, to_id: -1, to_socket: -1 };
 			ParserMaterial.write_result(link);
 			return {
 				out_basecol: `vec3(0.0, 0.0, 0.0)`,
@@ -175,21 +175,21 @@ class ParserMaterial {
 			else {
 				NodeShader.add_out(vert, "vec3 bposition");
 				NodeShader.add_uniform(vert, "vec3 dim", "_dim");
-				NodeShader.add_uniform(vert, "vec3 hdim", "_halfDim");
+				NodeShader.add_uniform(vert, "vec3 hdim", "_half_dim");
 				NodeShader.write_attrib(vert, `bposition = (pos.xyz + hdim) / dim;`);
 			}
 		}
 		if (frag.wposition) {
-			NodeShader.add_uniform(vert, "mat4 W", "_worldMatrix");
+			NodeShader.add_uniform(vert, "mat4 W", "_world_matrix");
 			NodeShader.add_out(vert, "vec3 wposition");
 			NodeShader.write_attrib(vert, `wposition = vec4(mul(vec4(pos.xyz, 1.0), W)).xyz;`);
 		}
 		else if (vert.wposition) {
-			NodeShader.add_uniform(vert, "mat4 W", "_worldMatrix");
+			NodeShader.add_uniform(vert, "mat4 W", "_world_matrix");
 			NodeShader.write_attrib(vert, `vec3 wposition = vec4(mul(vec4(pos.xyz, 1.0), W)).xyz;`);
 		}
 		if (frag.vposition) {
-			NodeShader.add_uniform(vert, "mat4 WV", "_worldViewMatrix");
+			NodeShader.add_uniform(vert, "mat4 WV", "_world_view_matrix");
 			NodeShader.add_out(vert, "vec3 vposition");
 			NodeShader.write_attrib(vert, `vposition = vec4(mul(vec4(pos.xyz, 1.0), WV)).xyz;`);
 		}
@@ -204,31 +204,31 @@ class ParserMaterial {
 		}
 		if (frag.wtangent) {
 			// NodeShaderContext.add_elem(con, "tang", "short4norm");
-			// NodeShader.add_uniform(vert, "mat3 N", "_normalMatrix");
+			// NodeShader.add_uniform(vert, "mat3 N", "_normal_matrix");
 			NodeShader.add_out(vert, "vec3 wtangent");
 			// NodeShader.write_attrib(vert, `wtangent = normalize(mul(tang.xyz, N));`);
 			NodeShader.write_attrib(vert, `wtangent = vec3(0.0, 0.0, 0.0);`);
 		}
 		if (frag.vVecCam) {
-			NodeShader.add_uniform(vert, "mat4 WV", "_worldViewMatrix");
+			NodeShader.add_uniform(vert, "mat4 WV", "_world_view_matrix");
 			NodeShader.add_out(vert, "vec3 eyeDirCam");
 			NodeShader.write_attrib(vert, `eyeDirCam = vec4(mul(vec4(pos.xyz, 1.0), WV)).xyz; eyeDirCam.z *= -1.0;`);
 			NodeShader.write_attrib(frag, `vec3 vVecCam = normalize(eyeDirCam);`);
 		}
 		if (frag.vVec) {
-			NodeShader.add_uniform(vert, "vec3 eye", "_cameraPosition");
+			NodeShader.add_uniform(vert, "vec3 eye", "_camera_pos");
 			NodeShader.add_out(vert, "vec3 eyeDir");
 			NodeShader.write_attrib(vert, `eyeDir = eye - wposition;`);
 			NodeShader.write_attrib(frag, `vec3 vVec = normalize(eyeDir);`);
 		}
 		if (frag.n) {
-			NodeShader.add_uniform(vert, "mat3 N", "_normalMatrix");
+			NodeShader.add_uniform(vert, "mat3 N", "_normal_matrix");
 			NodeShader.add_out(vert, "vec3 wnormal");
 			NodeShader.write_attrib(vert, `wnormal = mul(vec3(nor.xy, pos.w), N);`);
 			NodeShader.write_attrib(frag, `vec3 n = normalize(wnormal);`);
 		}
 		else if (vert.n) {
-			NodeShader.add_uniform(vert, "mat3 N", "_normalMatrix");
+			NodeShader.add_uniform(vert, "mat3 N", "_normal_matrix");
 			NodeShader.write_attrib(vert, `vec3 wnormal = normalize(mul(vec3(nor.xy, pos.w), N));`);
 		}
 		if (frag.nAttr) {
@@ -248,7 +248,7 @@ class ParserMaterial {
 		}
 	}
 
-	static parse_output = (node: TNode): TShaderOut => {
+	static parse_output = (node: zui_node_t): TShaderOut => {
 		if (ParserMaterial.parse_surface || ParserMaterial.parse_opacity) {
 			return ParserMaterial.parse_shader_input(node.inputs[0]);
 		}
@@ -256,7 +256,7 @@ class ParserMaterial {
 		// Parse volume, displacement..
 	}
 
-	static parse_output_pbr = (node: TNode): TShaderOut => {
+	static parse_output_pbr = (node: zui_node_t): TShaderOut => {
 		if (ParserMaterial.parse_surface || ParserMaterial.parse_opacity) {
 			return ParserMaterial.parse_shader(node, null);
 		}
@@ -264,12 +264,12 @@ class ParserMaterial {
 		// Parse volume, displacement..
 	}
 
-	static get_group = (name: string): TNodeCanvas => {
+	static get_group = (name: string): zui_node_canvas_t => {
 		for (let g of Project.materialGroups) if (g.canvas.name == name) return g.canvas;
 		return null;
 	}
 
-	static push_group = (g: TNodeCanvas) => {
+	static push_group = (g: zui_node_canvas_t) => {
 		ParserMaterial.canvases.push(g);
 		ParserMaterial.nodes = g.nodes;
 		ParserMaterial.links = g.links;
@@ -282,7 +282,7 @@ class ParserMaterial {
 		ParserMaterial.links = g.links;
 	}
 
-	static parse_group = (node: TNode, socket: TNodeSocket): string => { // Entering group
+	static parse_group = (node: zui_node_t, socket: zui_node_socket_t): string => { // Entering group
 		ParserMaterial.parents.push(node);
 		ParserMaterial.push_group(ParserMaterial.get_group(node.name));
 		let output_node = ParserMaterial.node_by_type(ParserMaterial.nodes, `GROUP_OUTPUT`);
@@ -295,7 +295,7 @@ class ParserMaterial {
 		return out_group;
 	}
 
-	static parse_group_input = (node: TNode, socket: TNodeSocket): string => {
+	static parse_group_input = (node: zui_node_t, socket: zui_node_socket_t): string => {
 		let parent = ParserMaterial.parents.pop(); // Leaving group
 		ParserMaterial.pop_group();
 		let index = ParserMaterial.socket_index(node, socket);
@@ -306,7 +306,7 @@ class ParserMaterial {
 		return res;
 	}
 
-	static parse_input = (inp: TNodeSocket): string => {
+	static parse_input = (inp: zui_node_socket_t): string => {
 		if (inp.type == "RGB") {
 			return ParserMaterial.parse_vector_input(inp);
 		}
@@ -322,7 +322,7 @@ class ParserMaterial {
 		return null;
 	}
 
-	static parse_shader_input = (inp: TNodeSocket): TShaderOut => {
+	static parse_shader_input = (inp: zui_node_socket_t): TShaderOut => {
 		let l = ParserMaterial.getInputLink(inp);
 		let from_node = l != null ? ParserMaterial.getNode(l.from_id) : null;
 		if (from_node != null) {
@@ -345,7 +345,7 @@ class ParserMaterial {
 		}
 	}
 
-	static parse_shader = (node: TNode, socket: TNodeSocket): TShaderOut => {
+	static parse_shader = (node: zui_node_t, socket: zui_node_socket_t): TShaderOut => {
 		let sout: TShaderOut = {
 			out_basecol: "vec3(0.8, 0.8, 0.8)",
 			out_roughness: "0.0",
@@ -396,7 +396,7 @@ class ParserMaterial {
 		return sout;
 	}
 
-	static parse_vector_input = (inp: TNodeSocket): string => {
+	static parse_vector_input = (inp: zui_node_socket_t): string => {
 		let l = ParserMaterial.getInputLink(inp);
 		let from_node = l != null ? ParserMaterial.getNode(l.from_id) : null;
 		if (from_node != null) {
@@ -423,7 +423,7 @@ class ParserMaterial {
 		}
 	}
 
-	static parse_vector = (node: TNode, socket: TNodeSocket): string => {
+	static parse_vector = (node: zui_node_t, socket: zui_node_socket_t): string => {
 		if (node.type == `GROUP`) {
 			return ParserMaterial.parse_group(node, socket);
 		}
@@ -1082,7 +1082,7 @@ class ParserMaterial {
 		return "vec3(0.0, 0.0, 0.0)";
 	}
 
-	static parse_normal_map_color_input = (inp: TNodeSocket) => {
+	static parse_normal_map_color_input = (inp: zui_node_socket_t) => {
 		ParserMaterial.frag.write_normal++;
 		ParserMaterial.out_normaltan = ParserMaterial.parse_vector_input(inp);
 		if (!ParserMaterial.arm_export_tangents) {
@@ -1104,7 +1104,7 @@ class ParserMaterial {
 		ParserMaterial.frag.write_normal--;
 	}
 
-	static parse_value_input = (inp: TNodeSocket, vector_as_grayscale = false) : string => {
+	static parse_value_input = (inp: zui_node_socket_t, vector_as_grayscale = false) : string => {
 		let l = ParserMaterial.getInputLink(inp);
 		let from_node = l != null ? ParserMaterial.getNode(l.from_id) : null;
 		if (from_node != null) {
@@ -1131,7 +1131,7 @@ class ParserMaterial {
 		}
 	}
 
-	static parse_value = (node: TNode, socket: TNodeSocket): string => {
+	static parse_value = (node: zui_node_t, socket: zui_node_socket_t): string => {
 		if (node.type == `GROUP`) {
 			return ParserMaterial.parse_group(node, socket);
 		}
@@ -1153,7 +1153,7 @@ class ParserMaterial {
 		}
 		else if (node.type == "CAMERA") {
 			if (socket == node.outputs[1]) { // View Z Depth
-				NodeShader.add_uniform(ParserMaterial.curshader, "vec2 cameraProj", "_cameraPlaneProj");
+				NodeShader.add_uniform(ParserMaterial.curshader, "vec2 cameraProj", "_camera_plane_proj");
 				///if (krom_direct3d11 || krom_direct3d12 || krom_metal || krom_vulkan)
 				ParserMaterial.curshader.wvpposition = true;
 				return "(cameraProj.y / ((wvpposition.z / wvpposition.w) - cameraProj.x))";
@@ -1162,7 +1162,7 @@ class ParserMaterial {
 				///end
 			}
 			else { // View Distance
-				NodeShader.add_uniform(ParserMaterial.curshader, "vec3 eye", "_cameraPosition");
+				NodeShader.add_uniform(ParserMaterial.curshader, "vec3 eye", "_camera_pos");
 				ParserMaterial.curshader.wposition = true;
 				return "distance(eye, wposition)";
 			}
@@ -1295,15 +1295,15 @@ class ParserMaterial {
 		}
 		else if (node.type == "OBJECT_INFO") {
 			if (socket == node.outputs[1]) { // Object Index
-				NodeShader.add_uniform(ParserMaterial.curshader, "float objectInfoIndex", "_objectInfoIndex");
+				NodeShader.add_uniform(ParserMaterial.curshader, "float objectInfoIndex", "_object_info_index");
 				return "objectInfoIndex";
 			}
 			else if (socket == node.outputs[2]) { // Material Index
-				NodeShader.add_uniform(ParserMaterial.curshader, "float objectInfoMaterialIndex", "_objectInfoMaterialIndex");
+				NodeShader.add_uniform(ParserMaterial.curshader, "float objectInfoMaterialIndex", "_object_info_material_index");
 				return "objectInfoMaterialIndex";
 			}
 			else if (socket == node.outputs[3]) { // Random
-				NodeShader.add_uniform(ParserMaterial.curshader, "float objectInfoRandom", "_objectInfoRandom");
+				NodeShader.add_uniform(ParserMaterial.curshader, "float objectInfoRandom", "_object_info_random");
 				return "objectInfoRandom";
 			}
 		}
@@ -1649,7 +1649,7 @@ class ParserMaterial {
 		return "0.0";
 	}
 
-	static getCoord = (node: TNode): string => {
+	static getCoord = (node: zui_node_t): string => {
 		if (ParserMaterial.getInputLink(node.inputs[0]) != null) {
 			return ParserMaterial.parse_vector_input(node.inputs[0]);
 		}
@@ -1712,14 +1712,14 @@ class ParserMaterial {
 		return `mix(${ys_var}[${index_var}], ${ys_var}[${index_var} + 1], (${fac_var} - ${facs_var}[${index_var}]) * (1.0 / (${facs_var}[${index_var} + 1] - ${facs_var}[${index_var}])))`;
 	}
 
-	static res_var_name = (node: TNode, socket: TNodeSocket): string => {
+	static res_var_name = (node: zui_node_t, socket: zui_node_socket_t): string => {
 		return ParserMaterial.node_name(node) + "_" + ParserMaterial.safesrc(socket.name) + "_res";
 	}
 
 	static parsedMap = new Map<string, string>();
 	static textureMap = new Map<string, string>();
 
-	static write_result = (l: TNodeLink): string => {
+	static write_result = (l: zui_node_link_t): string => {
 		let from_node = ParserMaterial.getNode(l.from_id);
 		let from_socket = from_node.outputs[l.from_socket];
 		let res_var = ParserMaterial.res_var_name(from_node, from_socket);
@@ -1746,11 +1746,11 @@ class ParserMaterial {
 		return res_var;
 	}
 
-	static store_var_name = (node: TNode): string => {
+	static store_var_name = (node: zui_node_t): string => {
 		return ParserMaterial.node_name(node) + "_store";
 	}
 
-	static texture_store = (node: TNode, tex: TBindTexture, tex_name: string, color_space: i32): string => {
+	static texture_store = (node: zui_node_t, tex: bind_tex_t, tex_name: string, color_space: i32): string => {
 		ParserMaterial.matcon.bind_textures.push(tex);
 		NodeShaderContext.add_elem(ParserMaterial.curshader.context, "tex", "short2norm");
 		NodeShader.add_uniform(ParserMaterial.curshader, "sampler2D " + tex_name);
@@ -1832,17 +1832,17 @@ class ParserMaterial {
 		///end
 	}
 
-	static node_by_type = (nodes: TNode[], ntype: string): TNode => {
+	static node_by_type = (nodes: zui_node_t[], ntype: string): zui_node_t => {
 		for (let n of nodes) if (n.type == ntype) return n;
 		return null;
 	}
 
-	static socket_index = (node: TNode, socket: TNodeSocket): i32 => {
+	static socket_index = (node: zui_node_t, socket: zui_node_socket_t): i32 => {
 		for (let i = 0; i < node.outputs.length; ++i) if (node.outputs[i] == socket) return i;
 		return -1;
 	}
 
-	static node_name = (node: TNode, _parents: TNode[] = null): string => {
+	static node_name = (node: zui_node_t, _parents: zui_node_t[] = null): string => {
 		if (_parents == null) _parents = ParserMaterial.parents;
 		let s = node.name;
 		for (let p of _parents) s = p.name + p.id + `_` + s;
@@ -1869,14 +1869,14 @@ class ParserMaterial {
 		return "";
 	}
 
-	static make_texture = (image_node: TNode, tex_name: string, matname: string = null): TBindTexture => {
+	static make_texture = (image_node: zui_node_t, tex_name: string, matname: string = null): bind_tex_t => {
 
 		let filepath = ParserMaterial.enumData(Base.enumTexts(image_node.type)[image_node.buttons[0].default_value]);
 		if (filepath == "" || filepath.indexOf(".") == -1) {
 			return null;
 		}
 
-		let tex: TBindTexture = {
+		let tex: bind_tex_t = {
 			name: tex_name,
 			file: filepath
 		};

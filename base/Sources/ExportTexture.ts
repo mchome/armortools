@@ -94,7 +94,7 @@ class ExportTexture {
 		Context.raw.tool = WorkspaceTool.ToolFill;
 		MakeMaterial.parsePaintMaterial();
 		let _paintObject = Context.raw.paintObject;
-		let planeo: TMeshObject = Scene.getChild(".Plane").ext;
+		let planeo: mesh_object_t = scene_get_child(".Plane").ext;
 		planeo.base.visible = true;
 		Context.raw.paintObject = planeo;
 		Context.raw.pdirty = 1;
@@ -123,7 +123,7 @@ class ExportTexture {
 		let textureSizeY = Config.getTextureResY();
 		let formatQuality = Context.raw.formatQuality;
 		///if (krom_android || krom_ios)
-		let f = System.title;
+		let f = sys_title();
 		///else
 		let f = UIFiles.filename;
 		///end
@@ -140,8 +140,8 @@ class ExportTexture {
 		Base.makeTempImg();
 		Base.makeExportImg();
 		if (Base.pipeMerge == null) Base.makePipe();
-		if (ConstData.screenAlignedVB == null) ConstData.createScreenAlignedData();
-		let empty = RenderPath.renderTargets.get("empty_white").image;
+		if (const_data_screen_aligned_vb == null) const_data_create_screen_aligned_data();
+		let empty = render_path_render_targets.get("empty_white")._image;
 
 		// Append object mask name
 		let exportSelected = Context.raw.layersExport == ExportMode.ExportSelected;
@@ -153,15 +153,15 @@ class ExportTexture {
 		}
 
 		// Clear export layer
-		Base.expa.g4.begin();
-		Base.expa.g4.clear(color_from_floats(0.0, 0.0, 0.0, 0.0));
-		Base.expa.g4.end();
-		Base.expb.g4.begin();
-		Base.expb.g4.clear(color_from_floats(0.5, 0.5, 1.0, 0.0));
-		Base.expb.g4.end();
-		Base.expc.g4.begin();
-		Base.expc.g4.clear(color_from_floats(1.0, 0.0, 0.0, 0.0));
-		Base.expc.g4.end();
+		g4_begin(Base.expa);
+		g4_clear(color_from_floats(0.0, 0.0, 0.0, 0.0));
+		g4_end();
+		g4_begin(Base.expb);
+		g4_clear(color_from_floats(0.5, 0.5, 1.0, 0.0));
+		g4_end();
+		g4_begin(Base.expc);
+		g4_clear(color_from_floats(1.0, 0.0, 0.0, 0.0));
+		g4_end();
 
 		// Flatten layers
 		for (let l1 of layers) {
@@ -179,8 +179,9 @@ class ExportTexture {
 			if (l1masks != null && !bakeMaterial) {
 				if (l1masks.length > 1) {
 					Base.makeTempMaskImg();
-					Base.tempMaskImage.g2.begin(true, 0x00000000);
-					Base.tempMaskImage.g2.end();
+					g2_begin(Base.tempMaskImage);
+					g2_clear(0x00000000);
+					g2_end();
 					let l1: any = { texpaint: Base.tempMaskImage };
 					for (let i = 0; i < l1masks.length; ++i) {
 						Base.mergeLayer(l1, l1masks[i]);
@@ -191,53 +192,53 @@ class ExportTexture {
 			}
 
 			if (l1.paintBase) {
-				Base.tempImage.g2.begin(false); // Copy to temp
-				Base.tempImage.g2.pipeline = Base.pipeCopy;
-				Base.tempImage.g2.drawImage(Base.expa, 0, 0);
-				Base.tempImage.g2.pipeline = null;
-				Base.tempImage.g2.end();
+				g2_begin(Base.tempImage); // Copy to temp
+				g2_set_pipeline(Base.pipeCopy);
+				g2_draw_image(Base.expa, 0, 0);
+				g2_set_pipeline(null);
+				g2_end();
 
-				Base.expa.g4.begin();
-				Base.expa.g4.setPipeline(Base.pipeMerge);
-				Base.expa.g4.setTexture(Base.tex0, l1.texpaint);
-				Base.expa.g4.setTexture(Base.tex1, empty);
-				Base.expa.g4.setTexture(Base.texmask, mask);
-				Base.expa.g4.setTexture(Base.texa, Base.tempImage);
-				Base.expa.g4.setFloat(Base.opac, SlotLayer.getOpacity(l1));
-				Base.expa.g4.setInt(Base.blending, layers.length > 1 ? l1.blending : 0);
-				Base.expa.g4.setVertexBuffer(ConstData.screenAlignedVB);
-				Base.expa.g4.setIndexBuffer(ConstData.screenAlignedIB);
-				Base.expa.g4.drawIndexedVertices();
-				Base.expa.g4.end();
+				g4_begin(Base.expa);
+				g4_set_pipeline(Base.pipeMerge);
+				g4_set_tex(Base.tex0, l1.texpaint);
+				g4_set_tex(Base.tex1, empty);
+				g4_set_tex(Base.texmask, mask);
+				g4_set_tex(Base.texa, Base.tempImage);
+				g4_set_float(Base.opac, SlotLayer.getOpacity(l1));
+				g4_set_int(Base.blending, layers.length > 1 ? l1.blending : 0);
+				g4_set_vertex_buffer(const_data_screen_aligned_vb);
+				g4_set_index_buffer(const_data_screen_aligned_ib);
+				g4_draw();
+				g4_end();
 			}
 
 			if (l1.paintNor) {
-				Base.tempImage.g2.begin(false);
-				Base.tempImage.g2.pipeline = Base.pipeCopy;
-				Base.tempImage.g2.drawImage(Base.expb, 0, 0);
-				Base.tempImage.g2.pipeline = null;
-				Base.tempImage.g2.end();
+				g2_begin(Base.tempImage);
+				g2_set_pipeline(Base.pipeCopy);
+				g2_draw_image(Base.expb, 0, 0);
+				g2_set_pipeline(null);
+				g2_end();
 
-				Base.expb.g4.begin();
-				Base.expb.g4.setPipeline(Base.pipeMerge);
-				Base.expb.g4.setTexture(Base.tex0, l1.texpaint);
-				Base.expb.g4.setTexture(Base.tex1, l1.texpaint_nor);
-				Base.expb.g4.setTexture(Base.texmask, mask);
-				Base.expb.g4.setTexture(Base.texa, Base.tempImage);
-				Base.expb.g4.setFloat(Base.opac, SlotLayer.getOpacity(l1));
-				Base.expb.g4.setInt(Base.blending, l1.paintNorBlend ? -2 : -1);
-				Base.expb.g4.setVertexBuffer(ConstData.screenAlignedVB);
-				Base.expb.g4.setIndexBuffer(ConstData.screenAlignedIB);
-				Base.expb.g4.drawIndexedVertices();
-				Base.expb.g4.end();
+				g4_begin(Base.expb);
+				g4_set_pipeline(Base.pipeMerge);
+				g4_set_tex(Base.tex0, l1.texpaint);
+				g4_set_tex(Base.tex1, l1.texpaint_nor);
+				g4_set_tex(Base.texmask, mask);
+				g4_set_tex(Base.texa, Base.tempImage);
+				g4_set_float(Base.opac, SlotLayer.getOpacity(l1));
+				g4_set_int(Base.blending, l1.paintNorBlend ? -2 : -1);
+				g4_set_vertex_buffer(const_data_screen_aligned_vb);
+				g4_set_index_buffer(const_data_screen_aligned_ib);
+				g4_draw();
+				g4_end();
 			}
 
 			if (l1.paintOcc || l1.paintRough || l1.paintMet || l1.paintHeight) {
-				Base.tempImage.g2.begin(false);
-				Base.tempImage.g2.pipeline = Base.pipeCopy;
-				Base.tempImage.g2.drawImage(Base.expc, 0, 0);
-				Base.tempImage.g2.pipeline = null;
-				Base.tempImage.g2.end();
+				g2_begin(Base.tempImage);
+				g2_set_pipeline(Base.pipeCopy);
+				g2_draw_image(Base.expc, 0, 0);
+				g2_set_pipeline(null);
+				g2_end();
 
 				if (l1.paintOcc && l1.paintRough && l1.paintMet && l1.paintHeight) {
 					Base.commandsMergePack(Base.pipeMerge, Base.expc, l1.texpaint, l1.texpaint_pack, SlotLayer.getOpacity(l1), mask, l1.paintHeightBlend ? -3 : -1);
@@ -252,12 +253,12 @@ class ExportTexture {
 
 		///if krom_metal
 		// Flush command list
-		Base.expa.g2.begin(false);
-		Base.expa.g2.end();
-		Base.expb.g2.begin(false);
-		Base.expb.g2.end();
-		Base.expc.g2.begin(false);
-		Base.expc.g2.end();
+		g2_begin(Base.expa);
+		g2_end();
+		g2_begin(Base.expb);
+		g2_end();
+		g2_begin(Base.expc);
+		g2_end();
 		///end
 		///end
 
@@ -281,9 +282,9 @@ class ExportTexture {
 
 		for (let t of preset.textures) {
 			for (let c of t.channels) {
-				if      ((c == "base_r" || c == "base_g" || c == "base_b" || c == "opac") && pixpaint == null) pixpaint = texpaint.getPixels();
-				else if ((c == "nor_r" || c == "nor_g" || c == "nor_g_directx" || c == "nor_b" || c == "emis" || c == "subs") && pixpaint_nor == null) pixpaint_nor = texpaint_nor.getPixels();
-				else if ((c == "occ" || c == "rough" || c == "metal" || c == "height" || c == "smooth") && pixpaint_pack == null) pixpaint_pack = texpaint_pack.getPixels();
+				if      ((c == "base_r" || c == "base_g" || c == "base_b" || c == "opac") && pixpaint == null) pixpaint = image_get_pixels(texpaint);
+				else if ((c == "nor_r" || c == "nor_g" || c == "nor_g_directx" || c == "nor_b" || c == "emis" || c == "subs") && pixpaint_nor == null) pixpaint_nor = image_get_pixels(texpaint_nor);
+				else if ((c == "occ" || c == "rough" || c == "metal" || c == "height" || c == "smooth") && pixpaint_pack == null) pixpaint_pack = image_get_pixels(texpaint_pack);
 			}
 		}
 
@@ -341,7 +342,7 @@ class ExportTexture {
 			}
 		}
 
-		// Release staging memory allocated in Image.getPixels()
+		// Release staging memory allocated in image_get_pixels()
 		texpaint.pixels = null;
 		texpaint_nor.pixels = null;
 		texpaint_pack.pixels = null;
@@ -360,8 +361,8 @@ class ExportTexture {
 		if (type == 2 && off == 3) format = 6; // AAA1
 
 		if (Context.raw.layersDestination == ExportDestination.DestinationPacked) {
-			let image = Image.fromBytes(pixels, resX, resY);
-			Data.cachedImages.set(file, image);
+			let image = image_from_bytes(pixels, resX, resY);
+			data_cached_images.set(file, image);
 			let ar = file.split(Path.sep);
 			let name = ar[ar.length - 1];
 			let asset: TAsset = {name: name, file: file, id: Project.assetId++};
@@ -375,14 +376,14 @@ class ExportTexture {
 		}
 
 		if (bits == 8 && Context.raw.formatType == TextureLdrFormat.FormatPng) {
-			Krom.writePng(file, pixels, resX, resY, format);
+			krom_write_png(file, pixels, resX, resY, format);
 		}
 		else if (bits == 8 && Context.raw.formatType == TextureLdrFormat.FormatJpg) {
-			Krom.writeJpg(file, pixels, resX, resY, format, Math.floor(Context.raw.formatQuality));
+			krom_write_jpg(file, pixels, resX, resY, format, Math.floor(Context.raw.formatQuality));
 		}
 		else { // Exr
 			let b = ParserExr.run(resX, resY, pixels, bits, type, off);
-			Krom.fileSaveBytes(file, b, b.byteLength);
+			krom_file_save_bytes(file, b, b.byteLength);
 		}
 	}
 

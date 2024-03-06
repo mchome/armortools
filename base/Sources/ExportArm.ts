@@ -1,45 +1,45 @@
 
 class ExportArm {
 
-	static runMesh = (path: string, paintObjects: TMeshObject[]) => {
-		let mesh_datas: TMeshData[] = [];
+	static runMesh = (path: string, paintObjects: mesh_object_t[]) => {
+		let mesh_datas: mesh_data_t[] = [];
 		for (let p of paintObjects) mesh_datas.push(p.data);
-		let raw: TSceneFormat = { mesh_datas: mesh_datas };
-		let b = ArmPack.encode(raw);
+		let raw: scene_t = { mesh_datas: mesh_datas };
+		let b = armpack_encode(raw);
 		if (!path.endsWith(".arm")) path += ".arm";
-		Krom.fileSaveBytes(path, b, b.byteLength + 1);
+		krom_file_save_bytes(path, b, b.byteLength + 1);
 	}
 
 	static runProject = () => {
 		///if (is_paint || is_sculpt)
-		let mnodes: TNodeCanvas[] = [];
+		let mnodes: zui_node_canvas_t[] = [];
 		for (let m of Project.materials) {
-			let c: TNodeCanvas = JSON.parse(JSON.stringify(m.canvas));
+			let c: zui_node_canvas_t = JSON.parse(JSON.stringify(m.canvas));
 			for (let n of c.nodes) ExportArm.exportNode(n);
 			mnodes.push(c);
 		}
 
-		let bnodes: TNodeCanvas[] = [];
+		let bnodes: zui_node_canvas_t[] = [];
 		for (let b of Project.brushes) bnodes.push(b.canvas);
 		///end
 
 		///if is_lab
-		let c: TNodeCanvas = JSON.parse(JSON.stringify(Project.canvas));
+		let c: zui_node_canvas_t = JSON.parse(JSON.stringify(Project.canvas));
 		for (let n of c.nodes) ExportArm.exportNode(n);
 		///end
 
-		let mgroups: TNodeCanvas[] = null;
+		let mgroups: zui_node_canvas_t[] = null;
 		if (Project.materialGroups.length > 0) {
 			mgroups = [];
 			for (let g of Project.materialGroups) {
-				let c: TNodeCanvas = JSON.parse(JSON.stringify(g.canvas));
+				let c: zui_node_canvas_t = JSON.parse(JSON.stringify(g.canvas));
 				for (let n of c.nodes) ExportArm.exportNode(n);
 				mgroups.push(c);
 			}
 		}
 
 		///if (is_paint || is_sculpt)
-		let md: TMeshData[] = [];
+		let md: mesh_data_t[] = [];
 		for (let p of Project.paintObjects) md.push(p.data);
 		///end
 
@@ -62,11 +62,11 @@ class ExportArm {
 				name: l.name,
 				res: l.texpaint != null ? l.texpaint.width : Project.layers[0].texpaint.width,
 				bpp: bpp,
-				texpaint: l.texpaint != null ? Lz4.encode(l.texpaint.getPixels()) : null,
+				texpaint: l.texpaint != null ? lz4_encode(image_get_pixels(l.texpaint)) : null,
 				uv_scale: l.scale,
 				uv_rot: l.angle,
 				uv_type: l.uvType,
-				decal_mat: l.uvType == UVType.UVProject ? Mat4.toFloat32Array(l.decalMat) : null,
+				decal_mat: l.uvType == UVType.UVProject ? mat4_to_f32_array(l.decalMat) : null,
 				opacity_mask: l.maskOpacity,
 				fill_layer: l.fill_layer != null ? Project.materials.indexOf(l.fill_layer) : -1,
 				object_mask: l.objectMask,
@@ -74,8 +74,8 @@ class ExportArm {
 				parent: l.parent != null ? Project.layers.indexOf(l.parent) : -1,
 				visible: l.visible,
 				///if is_paint
-				texpaint_nor: l.texpaint_nor != null ? Lz4.encode(l.texpaint_nor.getPixels()) : null,
-				texpaint_pack: l.texpaint_pack != null ? Lz4.encode(l.texpaint_pack.getPixels()) : null,
+				texpaint_nor: l.texpaint_nor != null ? lz4_encode(image_get_pixels(l.texpaint_nor)) : null,
+				texpaint_pack: l.texpaint_pack != null ? lz4_encode(image_get_pixels(l.texpaint_pack)) : null,
 				paint_base: l.paintBase,
 				paint_opac: l.paintOpac,
 				paint_occ: l.paintOcc,
@@ -106,10 +106,10 @@ class ExportArm {
 			packed_assets: packed_assets,
 			swatches: Project.raw.swatches,
 			envmap: Project.raw.envmap != null ? (sameDrive ? Path.toRelative(Project.filepath, Project.raw.envmap) : Project.raw.envmap) : null,
-			envmap_strength: Scene.world.strength,
-			camera_world: Mat4.toFloat32Array(Scene.camera.base.transform.local),
+			envmap_strength: scene_world.strength,
+			camera_world: mat4_to_f32_array(scene_camera.base.transform.local),
 			camera_origin: ExportArm.vec3f32(Camera.origins[0]),
-			camera_fov: Scene.camera.data.fov,
+			camera_fov: scene_camera.data.fov,
 
 			///if (is_paint || is_sculpt)
 			mesh_datas: md,
@@ -138,22 +138,22 @@ class ExportArm {
 		};
 
 		///if (krom_android || krom_ios)
-		let tex = RenderPath.renderTargets.get(Context.raw.renderMode == RenderMode.RenderForward ? "buf" : "tex").image;
-		let mesh_icon = Image.createRenderTarget(256, 256);
-		let r = App.w() / App.h();
-		mesh_icon.g2.begin(false);
+		let tex = render_path_render_targets.get(Context.raw.renderMode == RenderMode.RenderForward ? "buf" : "tex")._image;
+		let mesh_icon = image_create_render_target(256, 256);
+		let r = app_w() / app_h();
+		g2_begin(mesh_icon);
 		///if krom_opengl
-		mesh_icon.g2.drawScaledImage(tex, -(256 * r - 256) / 2, 256, 256 * r, -256);
+		g2_draw_scaled_image(tex, -(256 * r - 256) / 2, 256, 256 * r, -256);
 		///else
-		mesh_icon.g2.drawScaledImage(tex, -(256 * r - 256) / 2, 0, 256 * r, 256);
+		g2_draw_scaled_image(tex, -(256 * r - 256) / 2, 0, 256 * r, 256);
 		///end
-		mesh_icon.g2.end();
+		g2_end();
 		///if krom_metal
 		// Flush command list
-		mesh_icon.g2.begin(false);
-		mesh_icon.g2.end();
+		g2_begin(mesh_icon);
+		g2_end();
 		///end
-		let mesh_icon_pixels = mesh_icon.getPixels();
+		let mesh_icon_pixels = image_get_pixels(mesh_icon);
 		let u8a = new Uint8Array(mesh_icon_pixels);
 		for (let i = 0; i < 256 * 256 * 4; ++i) {
 			u8a[i] = Math.floor(Math.pow(u8a[i] / 255, 1.0 / 2.2) * 255);
@@ -162,15 +162,15 @@ class ExportArm {
 		ExportArm.bgraSwap(mesh_icon_pixels);
 		///end
 		Base.notifyOnNextFrame(() => {
-			mesh_icon.unload();
+			image_unload(mesh_icon);
 		});
 		// Project.raw.mesh_icons =
 		// 	///if (krom_metal || krom_vulkan)
-		// 	[Lz4.encode(bgraSwap(mesh_icon_pixels)];
+		// 	[encode(bgraSwap(mesh_icon_pixels)];
 		// 	///else
-		// 	[Lz4.encode(mesh_icon_pixels)];
+		// 	[encode(mesh_icon_pixels)];
 		// 	///end
-		Krom.writePng(Project.filepath.substr(0, Project.filepath.length - 4) + "_icon.png", mesh_icon_pixels, 256, 256, 0);
+		krom_write_png(Project.filepath.substr(0, Project.filepath.length - 4) + "_icon.png", mesh_icon_pixels, 256, 256, 0);
 		///end
 
 		///if (is_paint || is_sculpt)
@@ -180,8 +180,8 @@ class ExportArm {
 		}
 		///end
 
-		let buffer = ArmPack.encode(Project.raw);
-		Krom.fileSaveBytes(Project.filepath, buffer, buffer.byteLength + 1);
+		let buffer = armpack_encode(Project.raw);
+		krom_file_save_bytes(Project.filepath, buffer, buffer.byteLength + 1);
 
 		// Save to recent
 		///if krom_ios
@@ -205,7 +205,7 @@ class ExportArm {
 		///end
 	}
 
-	static exportNode = (n: TNode, assets: TAsset[] = null) => {
+	static exportNode = (n: zui_node_t, assets: TAsset[] = null) => {
 		if (n.type == ExportArm.textureNodeName()) {
 			let index = n.buttons[0].default_value;
 			n.buttons[0].data = Base.enumTexts(n.type)[index];
@@ -226,10 +226,10 @@ class ExportArm {
 	///if (is_paint || is_sculpt)
 	static runMaterial = (path: string) => {
 		if (!path.endsWith(".arm")) path += ".arm";
-		let mnodes: TNodeCanvas[] = [];
-		let mgroups: TNodeCanvas[] = null;
+		let mnodes: zui_node_canvas_t[] = [];
+		let mgroups: zui_node_canvas_t[] = null;
 		let m = Context.raw.material;
-		let c: TNodeCanvas = JSON.parse(JSON.stringify(m.canvas));
+		let c: zui_node_canvas_t = JSON.parse(JSON.stringify(m.canvas));
 		let assets: TAsset[] = [];
 		if (UINodes.hasGroup(c)) {
 			mgroups = [];
@@ -253,18 +253,18 @@ class ExportArm {
 			material_groups: mgroups,
 			material_icons: isCloud ? null :
 				///if (krom_metal || krom_vulkan)
-				[Lz4.encode(ExportArm.bgraSwap(m.image.getPixels()))],
+				[lz4_encode(ExportArm.bgraSwap(image_get_pixels(m.image)))],
 				///else
-				[Lz4.encode(m.image.getPixels())],
+				[lz4_encode(image_get_pixels(m.image))],
 				///end
 			assets: texture_files,
 			packed_assets: packed_assets
 		};
 
 		if (Context.raw.writeIconOnExport) { // Separate icon files
-			Krom.writePng(path.substr(0, path.length - 4) + "_icon.png", m.image.getPixels(), m.image.width, m.image.height, 0);
+			krom_write_png(path.substr(0, path.length - 4) + "_icon.png", image_get_pixels(m.image), m.image.width, m.image.height, 0);
 			if (isCloud) {
-				Krom.writeJpg(path.substr(0, path.length - 4) + "_icon.jpg", m.image.getPixels(), m.image.width, m.image.height, 0, 50);
+				krom_write_jpg(path.substr(0, path.length - 4) + "_icon.jpg", image_get_pixels(m.image), m.image.width, m.image.height, 0, 50);
 			}
 		}
 
@@ -272,8 +272,8 @@ class ExportArm {
 			ExportArm.packAssets(raw, assets);
 		}
 
-		let buffer = ArmPack.encode(raw);
-		Krom.fileSaveBytes(path, buffer, buffer.byteLength + 1);
+		let buffer = armpack_encode(raw);
+		krom_file_save_bytes(path, buffer, buffer.byteLength + 1);
 	}
 	///end
 
@@ -292,9 +292,9 @@ class ExportArm {
 	///if (is_paint || is_sculpt)
 	static runBrush = (path: string) => {
 		if (!path.endsWith(".arm")) path += ".arm";
-		let bnodes: TNodeCanvas[] = [];
+		let bnodes: zui_node_canvas_t[] = [];
 		let b = Context.raw.brush;
-		let c: TNodeCanvas = JSON.parse(JSON.stringify(b.canvas));
+		let c: zui_node_canvas_t = JSON.parse(JSON.stringify(b.canvas));
 		let assets: TAsset[] = [];
 		for (let n of c.nodes) ExportArm.exportNode(n, assets);
 		bnodes.push(c);
@@ -312,24 +312,24 @@ class ExportArm {
 			brush_nodes: bnodes,
 			brush_icons: isCloud ? null :
 			///if (krom_metal || krom_vulkan)
-			[Lz4.encode(ExportArm.bgraSwap(b.image.getPixels()))],
+			[lz4_encode(ExportArm.bgraSwap(image_get_pixels(b.image)))],
 			///else
-			[Lz4.encode(b.image.getPixels())],
+			[lz4_encode(image_get_pixels(b.image))],
 			///end
 			assets: texture_files,
 			packed_assets: packed_assets
 		};
 
 		if (Context.raw.writeIconOnExport) { // Separate icon file
-			Krom.writePng(path.substr(0, path.length - 4) + "_icon.png", b.image.getPixels(), b.image.width, b.image.height, 0);
+			krom_write_png(path.substr(0, path.length - 4) + "_icon.png", image_get_pixels(b.image), b.image.width, b.image.height, 0);
 		}
 
 		if (Context.raw.packAssetsOnExport) { // Pack textures
 			ExportArm.packAssets(raw, assets);
 		}
 
-		let buffer = ArmPack.encode(raw);
-		Krom.fileSaveBytes(path, buffer, buffer.byteLength + 1);
+		let buffer = armpack_encode(raw);
+		krom_file_save_bytes(path, buffer, buffer.byteLength + 1);
 	}
 	///end
 
@@ -422,25 +422,25 @@ class ExportArm {
 		if (raw.packed_assets == null) {
 			raw.packed_assets = [];
 		}
-		let tempImages: Image[] = [];
+		let tempImages: image_t[] = [];
 		for (let i = 0; i < assets.length; ++i) {
 			if (!Project.packedAssetExists(raw.packed_assets, assets[i].file)) {
 				let image = Project.getImage(assets[i]);
-				let temp = Image.createRenderTarget(image.width, image.height);
-				temp.g2.begin(false);
-				temp.g2.drawImage(image, 0, 0);
-				temp.g2.end();
+				let temp = image_create_render_target(image.width, image.height);
+				g2_begin(temp);
+				g2_draw_image(image, 0, 0);
+				g2_end();
 				tempImages.push(temp);
 				raw.packed_assets.push({
 					name: assets[i].file,
 					bytes: assets[i].file.endsWith(".jpg") ?
-						Krom.encodeJpg(temp.getPixels(), temp.width, temp.height, 0, 80) :
-						Krom.encodePng(temp.getPixels(), temp.width, temp.height, 0)
+						krom_encode_jpg(image_get_pixels(temp), temp.width, temp.height, 0, 80) :
+						krom_encode_png(image_get_pixels(temp), temp.width, temp.height, 0)
 				});
 			}
 		}
 		Base.notifyOnNextFrame(() => {
-			for (let image of tempImages) image.unload();
+			for (let image of tempImages) image_unload(image);
 		});
 	}
 
@@ -450,11 +450,11 @@ class ExportArm {
 			version: manifest_version,
 			swatches: Project.raw.swatches
 		};
-		let buffer = ArmPack.encode(raw);
-		Krom.fileSaveBytes(path, buffer, buffer.byteLength + 1);
+		let buffer = armpack_encode(raw);
+		krom_file_save_bytes(path, buffer, buffer.byteLength + 1);
 	}
 
-	static vec3f32 = (v: TVec4): Float32Array => {
+	static vec3f32 = (v: vec4_t): Float32Array => {
 		let res = new Float32Array(3);
 		res[0] = v.x;
 		res[1] = v.y;

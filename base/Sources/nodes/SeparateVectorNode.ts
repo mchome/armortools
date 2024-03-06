@@ -6,14 +6,14 @@ class SeparateVectorNode extends LogicNode {
 	}
 
 	override get = (from: i32, done: (a: any)=>void) => {
-		this.inputs[0].get((vector: TVec4) => {
+		this.inputs[0].get((vector: vec4_t) => {
 			if (from == 0) done(vector.x);
 			else if (from == 1) done(vector.y);
 			else done(vector.z);
 		});
 	}
 
-	static def: TNode = {
+	static def: zui_node_t = {
 		id: 0,
 		name: _tr("Separate Vector"),
 		type: "SeparateVectorNode",

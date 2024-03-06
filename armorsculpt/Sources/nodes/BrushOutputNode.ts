@@ -98,13 +98,13 @@ class BrushOutputNode extends LogicNode {
 			!fillLayer &&
 			!groupLayer &&
 			(SlotLayer.isVisible(Context.raw.layer) || Context.raw.paint2d) &&
-			!UIBase.ui.isHovered &&
+			!UIBase.ui.is_hovered &&
 			!Base.isDragging &&
 			!Base.isResizing &&
 			!Base.isScrolling() &&
 			!Base.isComboSelected()) {
 
-			let down = Mouse.down() || Pen.down();
+			let down = mouse_down() || pen_down();
 
 			// Prevent painting the same spot
 			let sameSpot = Context.raw.paintVec.x == Context.raw.lastPaintX && Context.raw.paintVec.y == Context.raw.lastPaintY;

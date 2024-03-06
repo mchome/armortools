@@ -143,7 +143,7 @@ class History {
 					Context.raw.layer = Project.layers[step.layer];
 					SlotLayer.invertMask(Context.raw.layer);
 				}
-				App.notifyOnInit(_next);
+				app_notify_on_init(_next);
 			}
 			else if (step.name == "Apply Filter") {
 				History.undoI = History.undoI - 1 < 0 ? Config.raw.undo_steps - 1 : History.undoI - 1;
@@ -181,7 +181,7 @@ class History {
 				MakeMaterial.parseMeshMaterial();
 			}
 			else if (step.name == tr("Delete Node Group")) {
-				Project.materialGroups.splice(step.canvas_group, 0, { canvas: null, nodes: new Nodes() });
+				Project.materialGroups.splice(step.canvas_group, 0, { canvas: null, nodes: zui_nodes_create() });
 				History.swapCanvas(step);
 			}
 			else if (step.name == tr("New Material")) {
@@ -194,7 +194,6 @@ class History {
 				Project.materials.splice(step.material, 0, Context.raw.material);
 				Context.raw.material.canvas = step.canvas;
 				UINodes.canvasChanged();
-				UINodes.getNodes().handle = new Handle();
 				UINodes.hwnd.redraws = 2;
 			}
 			else if (step.name == tr("Duplicate Material")) {
@@ -309,8 +308,8 @@ class History {
 			}
 			else if (step.name == tr("Merge Layers")) {
 				Context.raw.layer = Project.layers[step.layer + 1];
-				App.notifyOnInit(History.redoMergeLayers);
-				App.notifyOnInit(Base.mergeDown);
+				app_notify_on_init(History.redoMergeLayers);
+				app_notify_on_init(Base.mergeDown);
 			}
 			else if (step.name == tr("Apply Mask")) {
 				Context.raw.layer = Project.layers[step.layer];
@@ -334,7 +333,7 @@ class History {
 					Context.raw.layer = Project.layers[step.layer];
 					SlotLayer.invertMask(Context.raw.layer);
 				}
-				App.notifyOnInit(_next);
+				app_notify_on_init(_next);
 			}
 			else if (step.name == tr("Apply Filter")) {
 				let lay = History.undoLayers[History.undoI];
@@ -380,7 +379,6 @@ class History {
 				Project.materials.splice(step.material, 0, Context.raw.material);
 				Context.raw.material.canvas = step.canvas;
 				UINodes.canvasChanged();
-				UINodes.getNodes().handle = new Handle();
 				UINodes.hwnd.redraws = 2;
 			}
 			else if (step.name == tr("Delete Material")) {
@@ -393,7 +391,6 @@ class History {
 				Project.materials.splice(step.material, 0, Context.raw.material);
 				Context.raw.material.canvas = step.canvas;
 				UINodes.canvasChanged();
-				UINodes.getNodes().handle = new Handle();
 				UINodes.hwnd.redraws = 2;
 			}
 			else { // Paint operation
@@ -437,10 +434,10 @@ class History {
 	}
 
 	///if (is_paint || is_sculpt)
-	static editNodes = (canvas: TNodeCanvas, canvas_type: i32, canvas_group: Null<i32> = null) => {
+	static editNodes = (canvas: zui_node_canvas_t, canvas_type: i32, canvas_group: Null<i32> = null) => {
 	///end
 	///if is_lab
-	static editNodes = (canvas: TNodeCanvas, canvas_group: Null<i32> = null) => {
+	static editNodes = (canvas: zui_node_canvas_t, canvas_group: Null<i32> = null) => {
 	///end
 		let step = History.push(tr("Edit Nodes"));
 		step.canvas_group = canvas_group;
@@ -508,7 +505,7 @@ class History {
 		}
 		History.steps.shift(); // Merge consumes 2 steps
 		History.undos--;
-		// TODO: use undo layer in App.mergeDown to save memory
+		// TODO: use undo layer in app_merge_down to save memory
 	}
 
 	static applyMask = () => {
@@ -593,7 +590,7 @@ class History {
 	static push = (name: string): TStep => {
 		///if (krom_windows || krom_linux || krom_darwin)
 		let filename = Project.filepath == "" ? UIFiles.filename : Project.filepath.substring(Project.filepath.lastIndexOf(Path.sep) + 1, Project.filepath.length - 4);
-		System.title = filename + "* - " + manifest_title;
+		sys_title_set(filename + "* - " + manifest_title);
 		///end
 
 		if (Config.raw.touch_ui) {
@@ -669,17 +666,17 @@ class History {
 		///end
 
 		if (isMask) {
-			RenderPath.setTarget("texpaint_undo" + toId);
-			RenderPath.bindTarget("texpaint" + fromId, "tex");
-			// RenderPath.drawShader("shader_datas/copy_pass/copyR8_pass");
-			RenderPath.drawShader("shader_datas/copy_pass/copy_pass");
+			render_path_set_target("texpaint_undo" + toId);
+			render_path_bind_target("texpaint" + fromId, "tex");
+			// render_path_draw_shader("shader_datas/copy_pass/copyR8_pass");
+			render_path_draw_shader("shader_datas/copy_pass/copy_pass");
 		}
 		else {
-			RenderPath.setTarget("texpaint_undo" + toId, ["texpaint_nor_undo" + toId, "texpaint_pack_undo" + toId]);
-			RenderPath.bindTarget("texpaint" + fromId, "tex0");
-			RenderPath.bindTarget("texpaint_nor" + fromId, "tex1");
-			RenderPath.bindTarget("texpaint_pack" + fromId, "tex2");
-			RenderPath.drawShader("shader_datas/copy_mrt3_pass/copy_mrt3_pass");
+			render_path_set_target("texpaint_undo" + toId, ["texpaint_nor_undo" + toId, "texpaint_pack_undo" + toId]);
+			render_path_bind_target("texpaint" + fromId, "tex0");
+			render_path_bind_target("texpaint_nor" + fromId, "tex1");
+			render_path_bind_target("texpaint_pack" + fromId, "tex2");
+			render_path_draw_shader("shader_datas/copy_mrt3_pass/copy_mrt3_pass");
 		}
 		History.undoI = (History.undoI + 1) % Config.raw.undo_steps;
 	}
@@ -720,14 +717,13 @@ class History {
 		///end
 
 		UINodes.canvasChanged();
-		UINodes.getNodes().handle = new Handle();
 		UINodes.hwnd.redraws = 2;
 	}
 }
 
 type TStep = {
 	name: string;
-	canvas?: TNodeCanvas; // Node history
+	canvas?: zui_node_canvas_t; // Node history
 	canvas_group?: i32;
 	///if (is_paint || is_sculpt)
 	layer: i32;

@@ -1,11 +1,11 @@
 
 class PhotoToPBRNode extends LogicNode {
 
-	static temp: Image = null;
-	static images: Image[] = null;
+	static temp: image_t = null;
+	static images: image_t[] = null;
 	static modelNames = ["base", "occlusion", "roughness", "metallic", "normal", "height"];
 
-	static cachedSource: Image = null;
+	static cachedSource: image_t = null;
 	static borderW = 64;
 	static tileW = 2048;
 	static tileWithBorderW = PhotoToPBRNode.tileW + PhotoToPBRNode.borderW * 2;
@@ -14,7 +14,7 @@ class PhotoToPBRNode extends LogicNode {
 		super();
 
 		if (PhotoToPBRNode.temp == null) {
-			PhotoToPBRNode.temp = Image.createRenderTarget(PhotoToPBRNode.tileWithBorderW, PhotoToPBRNode.tileWithBorderW);
+			PhotoToPBRNode.temp = image_create_render_target(PhotoToPBRNode.tileWithBorderW, PhotoToPBRNode.tileWithBorderW);
 		}
 
 		PhotoToPBRNode.init();
@@ -24,18 +24,18 @@ class PhotoToPBRNode extends LogicNode {
 		if (PhotoToPBRNode.images == null) {
 			PhotoToPBRNode.images = [];
 			for (let i = 0; i < PhotoToPBRNode.modelNames.length; ++i) {
-				PhotoToPBRNode.images.push(Image.createRenderTarget(Config.getTextureResX(), Config.getTextureResY()));
+				PhotoToPBRNode.images.push(image_create_render_target(Config.getTextureResX(), Config.getTextureResY()));
 			}
 		}
 	}
 
-	override getAsImage = (from: i32, done: (img: Image)=>void) => {
-		let getSource = (done: (img: Image)=>void) => {
+	override getAsImage = (from: i32, done: (img: image_t)=>void) => {
+		let getSource = (done: (img: image_t)=>void) => {
 			if (PhotoToPBRNode.cachedSource != null) done(PhotoToPBRNode.cachedSource);
 			else this.inputs[0].getAsImage(done);
 		}
 
-		getSource((source: Image) => {
+		getSource((source: image_t) => {
 			PhotoToPBRNode.cachedSource = source;
 
 			Console.progress(tr("Processing") + " - " + tr("Photo to PBR"));
@@ -48,17 +48,17 @@ class PhotoToPBRNode extends LogicNode {
 					let x = i % tilesX;
 					let y = Math.floor(i / tilesX);
 
-					PhotoToPBRNode.temp.g2.begin(false);
-					PhotoToPBRNode.temp.g2.drawScaledImage(source, PhotoToPBRNode.borderW - x * PhotoToPBRNode.tileW, PhotoToPBRNode.borderW - y * PhotoToPBRNode.tileW, -Config.getTextureResX(), Config.getTextureResY());
-					PhotoToPBRNode.temp.g2.drawScaledImage(source, PhotoToPBRNode.borderW - x * PhotoToPBRNode.tileW, PhotoToPBRNode.borderW - y * PhotoToPBRNode.tileW, Config.getTextureResX(), -Config.getTextureResY());
-					PhotoToPBRNode.temp.g2.drawScaledImage(source, PhotoToPBRNode.borderW - x * PhotoToPBRNode.tileW, PhotoToPBRNode.borderW - y * PhotoToPBRNode.tileW, -Config.getTextureResX(), -Config.getTextureResY());
-					PhotoToPBRNode.temp.g2.drawScaledImage(source, PhotoToPBRNode.borderW - x * PhotoToPBRNode.tileW + PhotoToPBRNode.tileW, PhotoToPBRNode.borderW - y * PhotoToPBRNode.tileW + PhotoToPBRNode.tileW, Config.getTextureResX(), Config.getTextureResY());
-					PhotoToPBRNode.temp.g2.drawScaledImage(source, PhotoToPBRNode.borderW - x * PhotoToPBRNode.tileW + PhotoToPBRNode.tileW, PhotoToPBRNode.borderW - y * PhotoToPBRNode.tileW + PhotoToPBRNode.tileW, -Config.getTextureResX(), Config.getTextureResY());
-					PhotoToPBRNode.temp.g2.drawScaledImage(source, PhotoToPBRNode.borderW - x * PhotoToPBRNode.tileW + PhotoToPBRNode.tileW, PhotoToPBRNode.borderW - y * PhotoToPBRNode.tileW + PhotoToPBRNode.tileW, Config.getTextureResX(), -Config.getTextureResY());
-					PhotoToPBRNode.temp.g2.drawScaledImage(source, PhotoToPBRNode.borderW - x * PhotoToPBRNode.tileW, PhotoToPBRNode.borderW - y * PhotoToPBRNode.tileW, Config.getTextureResX(), Config.getTextureResY());
-					PhotoToPBRNode.temp.g2.end();
+					g2_begin(PhotoToPBRNode.temp);
+					g2_draw_scaled_image(source, PhotoToPBRNode.borderW - x * PhotoToPBRNode.tileW, PhotoToPBRNode.borderW - y * PhotoToPBRNode.tileW, -Config.getTextureResX(), Config.getTextureResY());
+					g2_draw_scaled_image(source, PhotoToPBRNode.borderW - x * PhotoToPBRNode.tileW, PhotoToPBRNode.borderW - y * PhotoToPBRNode.tileW, Config.getTextureResX(), -Config.getTextureResY());
+					g2_draw_scaled_image(source, PhotoToPBRNode.borderW - x * PhotoToPBRNode.tileW, PhotoToPBRNode.borderW - y * PhotoToPBRNode.tileW, -Config.getTextureResX(), -Config.getTextureResY());
+					g2_draw_scaled_image(source, PhotoToPBRNode.borderW - x * PhotoToPBRNode.tileW + PhotoToPBRNode.tileW, PhotoToPBRNode.borderW - y * PhotoToPBRNode.tileW + PhotoToPBRNode.tileW, Config.getTextureResX(), Config.getTextureResY());
+					g2_draw_scaled_image(source, PhotoToPBRNode.borderW - x * PhotoToPBRNode.tileW + PhotoToPBRNode.tileW, PhotoToPBRNode.borderW - y * PhotoToPBRNode.tileW + PhotoToPBRNode.tileW, -Config.getTextureResX(), Config.getTextureResY());
+					g2_draw_scaled_image(source, PhotoToPBRNode.borderW - x * PhotoToPBRNode.tileW + PhotoToPBRNode.tileW, PhotoToPBRNode.borderW - y * PhotoToPBRNode.tileW + PhotoToPBRNode.tileW, Config.getTextureResX(), -Config.getTextureResY());
+					g2_draw_scaled_image(source, PhotoToPBRNode.borderW - x * PhotoToPBRNode.tileW, PhotoToPBRNode.borderW - y * PhotoToPBRNode.tileW, Config.getTextureResX(), Config.getTextureResY());
+					g2_end();
 
-					let bytes_img = PhotoToPBRNode.temp.getPixels();
+					let bytes_img = image_get_pixels(PhotoToPBRNode.temp);
 					let u8a = new Uint8Array(bytes_img);
 					let f32a = new Float32Array(3 * PhotoToPBRNode.tileWithBorderW * PhotoToPBRNode.tileWithBorderW);
 					for (let i = 0; i < (PhotoToPBRNode.tileWithBorderW * PhotoToPBRNode.tileWithBorderW); ++i) {
@@ -67,87 +67,86 @@ class PhotoToPBRNode extends LogicNode {
 						f32a[i + PhotoToPBRNode.tileWithBorderW * PhotoToPBRNode.tileWithBorderW * 2] = (u8a[i * 4 + 2] / 255 - 0.5) / 0.5;
 					}
 
-					Data.getBlob("models/photo_to_" + PhotoToPBRNode.modelNames[from] + ".quant.onnx", (model_blob: ArrayBuffer) => {
-						let buf = Krom.mlInference(model_blob, [f32a.buffer], null, null, Config.raw.gpu_inference);
-						let ar = new Float32Array(buf);
-						let u8a = new Uint8Array(4 * PhotoToPBRNode.tileW * PhotoToPBRNode.tileW);
-						let offsetG = (from == ChannelType.ChannelBaseColor || from == ChannelType.ChannelNormalMap) ? PhotoToPBRNode.tileWithBorderW * PhotoToPBRNode.tileWithBorderW : 0;
-						let offsetB = (from == ChannelType.ChannelBaseColor || from == ChannelType.ChannelNormalMap) ? PhotoToPBRNode.tileWithBorderW * PhotoToPBRNode.tileWithBorderW * 2 : 0;
-						for (let i = 0; i < (PhotoToPBRNode.tileW * PhotoToPBRNode.tileW); ++i) {
-							let x = PhotoToPBRNode.borderW + i % PhotoToPBRNode.tileW;
-							let y = PhotoToPBRNode.borderW + Math.floor(i / PhotoToPBRNode.tileW);
-							u8a[i * 4    ] = Math.floor((ar[y * PhotoToPBRNode.tileWithBorderW + x          ] * 0.5 + 0.5) * 255);
-							u8a[i * 4 + 1] = Math.floor((ar[y * PhotoToPBRNode.tileWithBorderW + x + offsetG] * 0.5 + 0.5) * 255);
-							u8a[i * 4 + 2] = Math.floor((ar[y * PhotoToPBRNode.tileWithBorderW + x + offsetB] * 0.5 + 0.5) * 255);
-							u8a[i * 4 + 3] = 255;
-						}
-						tileFloats.push(ar);
+					let model_blob: ArrayBuffer = data_get_blob("models/photo_to_" + PhotoToPBRNode.modelNames[from] + ".quant.onnx");
+					let buf = krom_ml_inference(model_blob, [f32a.buffer], null, null, Config.raw.gpu_inference);
+					let ar = new Float32Array(buf);
+					u8a = new Uint8Array(4 * PhotoToPBRNode.tileW * PhotoToPBRNode.tileW);
+					let offsetG = (from == ChannelType.ChannelBaseColor || from == ChannelType.ChannelNormalMap) ? PhotoToPBRNode.tileWithBorderW * PhotoToPBRNode.tileWithBorderW : 0;
+					let offsetB = (from == ChannelType.ChannelBaseColor || from == ChannelType.ChannelNormalMap) ? PhotoToPBRNode.tileWithBorderW * PhotoToPBRNode.tileWithBorderW * 2 : 0;
+					for (let i = 0; i < (PhotoToPBRNode.tileW * PhotoToPBRNode.tileW); ++i) {
+						let x = PhotoToPBRNode.borderW + i % PhotoToPBRNode.tileW;
+						let y = PhotoToPBRNode.borderW + Math.floor(i / PhotoToPBRNode.tileW);
+						u8a[i * 4    ] = Math.floor((ar[y * PhotoToPBRNode.tileWithBorderW + x          ] * 0.5 + 0.5) * 255);
+						u8a[i * 4 + 1] = Math.floor((ar[y * PhotoToPBRNode.tileWithBorderW + x + offsetG] * 0.5 + 0.5) * 255);
+						u8a[i * 4 + 2] = Math.floor((ar[y * PhotoToPBRNode.tileWithBorderW + x + offsetB] * 0.5 + 0.5) * 255);
+						u8a[i * 4 + 3] = 255;
+					}
+					tileFloats.push(ar);
 
-						// Use border pixels to blend seams
-						if (i > 0) {
-							if (x > 0) {
-								let ar = tileFloats[i - 1];
-								for (let yy = 0; yy < PhotoToPBRNode.tileW; ++yy) {
-									for (let xx = 0; xx < PhotoToPBRNode.borderW; ++xx) {
-										let i = yy * PhotoToPBRNode.tileW + xx;
-										let a = u8a[i * 4];
-										let b = u8a[i * 4 + 1];
-										let c = u8a[i * 4 + 2];
+					// Use border pixels to blend seams
+					if (i > 0) {
+						if (x > 0) {
+							let ar = tileFloats[i - 1];
+							for (let yy = 0; yy < PhotoToPBRNode.tileW; ++yy) {
+								for (let xx = 0; xx < PhotoToPBRNode.borderW; ++xx) {
+									let i = yy * PhotoToPBRNode.tileW + xx;
+									let a = u8a[i * 4];
+									let b = u8a[i * 4 + 1];
+									let c = u8a[i * 4 + 2];
 
-										let aa = Math.floor((ar[(PhotoToPBRNode.borderW + yy) * PhotoToPBRNode.tileWithBorderW + PhotoToPBRNode.borderW + PhotoToPBRNode.tileW + xx          ] * 0.5 + 0.5) * 255);
-										let bb = Math.floor((ar[(PhotoToPBRNode.borderW + yy) * PhotoToPBRNode.tileWithBorderW + PhotoToPBRNode.borderW + PhotoToPBRNode.tileW + xx + offsetG] * 0.5 + 0.5) * 255);
-										let cc = Math.floor((ar[(PhotoToPBRNode.borderW + yy) * PhotoToPBRNode.tileWithBorderW + PhotoToPBRNode.borderW + PhotoToPBRNode.tileW + xx + offsetB] * 0.5 + 0.5) * 255);
+									let aa = Math.floor((ar[(PhotoToPBRNode.borderW + yy) * PhotoToPBRNode.tileWithBorderW + PhotoToPBRNode.borderW + PhotoToPBRNode.tileW + xx          ] * 0.5 + 0.5) * 255);
+									let bb = Math.floor((ar[(PhotoToPBRNode.borderW + yy) * PhotoToPBRNode.tileWithBorderW + PhotoToPBRNode.borderW + PhotoToPBRNode.tileW + xx + offsetG] * 0.5 + 0.5) * 255);
+									let cc = Math.floor((ar[(PhotoToPBRNode.borderW + yy) * PhotoToPBRNode.tileWithBorderW + PhotoToPBRNode.borderW + PhotoToPBRNode.tileW + xx + offsetB] * 0.5 + 0.5) * 255);
 
-										let f = xx / PhotoToPBRNode.borderW;
-										let invf = 1.0 - f;
-										a = Math.floor(a * f + aa * invf);
-										b = Math.floor(b * f + bb * invf);
-										c = Math.floor(c * f + cc * invf);
+									let f = xx / PhotoToPBRNode.borderW;
+									let invf = 1.0 - f;
+									a = Math.floor(a * f + aa * invf);
+									b = Math.floor(b * f + bb * invf);
+									c = Math.floor(c * f + cc * invf);
 
-										u8a[i * 4    ] = a;
-										u8a[i * 4 + 1] = b;
-										u8a[i * 4 + 2] = c;
-									}
-								}
-							}
-							if (y > 0) {
-								let ar = tileFloats[i - tilesX];
-								for (let xx = 0; xx < PhotoToPBRNode.tileW; ++xx) {
-									for (let yy = 0; yy < PhotoToPBRNode.borderW; ++yy) {
-										let i = yy * PhotoToPBRNode.tileW + xx;
-										let a = u8a[i * 4];
-										let b = u8a[i * 4 + 1];
-										let c = u8a[i * 4 + 2];
-
-										let aa = Math.floor((ar[(PhotoToPBRNode.borderW + PhotoToPBRNode.tileW + yy) * PhotoToPBRNode.tileWithBorderW + PhotoToPBRNode.borderW + xx          ] * 0.5 + 0.5) * 255);
-										let bb = Math.floor((ar[(PhotoToPBRNode.borderW + PhotoToPBRNode.tileW + yy) * PhotoToPBRNode.tileWithBorderW + PhotoToPBRNode.borderW + xx + offsetG] * 0.5 + 0.5) * 255);
-										let cc = Math.floor((ar[(PhotoToPBRNode.borderW + PhotoToPBRNode.tileW + yy) * PhotoToPBRNode.tileWithBorderW + PhotoToPBRNode.borderW + xx + offsetB] * 0.5 + 0.5) * 255);
-
-										let f = yy / PhotoToPBRNode.borderW;
-										let invf = 1.0 - f;
-										a = Math.floor(a * f + aa * invf);
-										b = Math.floor(b * f + bb * invf);
-										c = Math.floor(c * f + cc * invf);
-
-										u8a[i * 4    ] = a;
-										u8a[i * 4 + 1] = b;
-										u8a[i * 4 + 2] = c;
-									}
+									u8a[i * 4    ] = a;
+									u8a[i * 4 + 1] = b;
+									u8a[i * 4 + 2] = c;
 								}
 							}
 						}
+						if (y > 0) {
+							let ar = tileFloats[i - tilesX];
+							for (let xx = 0; xx < PhotoToPBRNode.tileW; ++xx) {
+								for (let yy = 0; yy < PhotoToPBRNode.borderW; ++yy) {
+									let i = yy * PhotoToPBRNode.tileW + xx;
+									let a = u8a[i * 4];
+									let b = u8a[i * 4 + 1];
+									let c = u8a[i * 4 + 2];
 
-						///if (krom_metal || krom_vulkan)
-						if (from == ChannelType.ChannelBaseColor) PhotoToPBRNode.bgraSwap(u8a.buffer);
-						///end
+									let aa = Math.floor((ar[(PhotoToPBRNode.borderW + PhotoToPBRNode.tileW + yy) * PhotoToPBRNode.tileWithBorderW + PhotoToPBRNode.borderW + xx          ] * 0.5 + 0.5) * 255);
+									let bb = Math.floor((ar[(PhotoToPBRNode.borderW + PhotoToPBRNode.tileW + yy) * PhotoToPBRNode.tileWithBorderW + PhotoToPBRNode.borderW + xx + offsetG] * 0.5 + 0.5) * 255);
+									let cc = Math.floor((ar[(PhotoToPBRNode.borderW + PhotoToPBRNode.tileW + yy) * PhotoToPBRNode.tileWithBorderW + PhotoToPBRNode.borderW + xx + offsetB] * 0.5 + 0.5) * 255);
 
-						let temp2 = Image.fromBytes(u8a.buffer, PhotoToPBRNode.tileW, PhotoToPBRNode.tileW);
-						PhotoToPBRNode.images[from].g2.begin(false);
-						PhotoToPBRNode.images[from].g2.drawImage(temp2, x * PhotoToPBRNode.tileW, y * PhotoToPBRNode.tileW);
-						PhotoToPBRNode.images[from].g2.end();
-						Base.notifyOnNextFrame(() => {
-							temp2.unload();
-						});
+									let f = yy / PhotoToPBRNode.borderW;
+									let invf = 1.0 - f;
+									a = Math.floor(a * f + aa * invf);
+									b = Math.floor(b * f + bb * invf);
+									c = Math.floor(c * f + cc * invf);
+
+									u8a[i * 4    ] = a;
+									u8a[i * 4 + 1] = b;
+									u8a[i * 4 + 2] = c;
+								}
+							}
+						}
+					}
+
+					///if (krom_metal || krom_vulkan)
+					if (from == ChannelType.ChannelBaseColor) PhotoToPBRNode.bgraSwap(u8a.buffer);
+					///end
+
+					let temp2 = image_from_bytes(u8a.buffer, PhotoToPBRNode.tileW, PhotoToPBRNode.tileW);
+					g2_begin(PhotoToPBRNode.images[from]);
+					g2_draw_image(temp2, x * PhotoToPBRNode.tileW, y * PhotoToPBRNode.tileW);
+					g2_end();
+					Base.notifyOnNextFrame(() => {
+						image_unload(temp2);
 					});
 				}
 
@@ -168,7 +167,7 @@ class PhotoToPBRNode extends LogicNode {
 	}
 	///end
 
-	static def: TNode = {
+	static def: zui_node_t = {
 		id: 0,
 		name: _tr("Photo to PBR"),
 		type: "PhotoToPBRNode",

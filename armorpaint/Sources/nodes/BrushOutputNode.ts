@@ -104,14 +104,14 @@ class BrushOutputNode extends LogicNode {
 			!fillLayer &&
 			!groupLayer &&
 			(SlotLayer.isVisible(Context.raw.layer) || Context.raw.paint2d) &&
-			!UIBase.ui.isHovered &&
+			!UIBase.ui.is_hovered &&
 			!Base.isDragging &&
 			!Base.isResizing &&
 			!Base.isScrolling() &&
 			!Base.isComboSelected()) {
 
 			// Set color pick
-			let down = Mouse.down() || Pen.down();
+			let down = mouse_down() || pen_down();
 			if (down && Context.raw.tool == WorkspaceTool.ToolColorId && Project.assets.length > 0) {
 				Context.raw.colorIdPicked = true;
 				UIToolbar.toolbarHandle.redraws = 1;

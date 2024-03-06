@@ -12,14 +12,14 @@ type TProjectFormat = {
 	swatches?: TSwatchColor[];
 
 	///if (is_paint || is_sculpt)
-	brush_nodes?: TNodeCanvas[];
+	brush_nodes?: zui_node_canvas_t[];
 	brush_icons?: ArrayBuffer[];
-	material_nodes?: TNodeCanvas[];
-	material_groups?: TNodeCanvas[];
+	material_nodes?: zui_node_canvas_t[];
+	material_groups?: zui_node_canvas_t[];
 	material_icons?: ArrayBuffer[];
 	font_assets?: string[];
 	layer_datas?: TLayerData[];
-	mesh_datas?: TMeshData[];
+	mesh_datas?: mesh_data_t[];
 	mesh_assets?: string[];
 	mesh_icons?: ArrayBuffer[];
 	///end
@@ -30,9 +30,9 @@ type TProjectFormat = {
 	///end
 
 	///if is_lab
-	material?: TNodeCanvas;
-	material_groups?: TNodeCanvas[];
-	mesh_data?: TMeshData;
+	material?: zui_node_canvas_t;
+	material_groups?: zui_node_canvas_t[];
+	mesh_data?: mesh_data_t;
 	mesh_icon?: ArrayBuffer;
 	///end
 }
@@ -49,12 +49,12 @@ type TPackedAsset = {
 }
 
 type TSwatchColor = {
-	base: Color;
+	base: color_t;
 	opacity: f32;
 	occlusion: f32;
 	roughness: f32;
 	metallic: f32;
-	normal: Color;
+	normal: color_t;
 	emission: f32;
 	height: f32;
 	subsurface: f32;

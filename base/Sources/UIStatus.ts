@@ -8,25 +8,25 @@ class UIStatus {
 
 	static get width(): i32 {
 		///if (is_paint || is_sculpt)
-		return System.width - UIToolbar.toolbarw - Config.raw.layout[LayoutSize.LayoutSidebarW];
+		return sys_width() - UIToolbar.toolbarw - Config.raw.layout[LayoutSize.LayoutSidebarW];
 		///end
 		///if is_lab
-		return System.width;
+		return sys_width();
 		///end
 	}
 
-	static renderUI = (g: Graphics2) => {
+	static renderUI = () => {
 		let ui = UIBase.ui;
 
 		let statush = Config.raw.layout[LayoutSize.LayoutStatusH];
 
-		if (ui.window(UIBase.hwnds[TabArea.TabStatus], App.x(), System.height - statush, UIStatus.width, statush)) {
+		if (zui_window(UIBase.hwnds[TabArea.TabStatus], app_x(), sys_height() - statush, UIStatus.width, statush)) {
 			ui._y += 2;
 
 			// Border
-			ui.g.color = ui.t.SEPARATOR_COL;
-			ui.g.fillRect(0, 0, 1, ui._windowH);
-			ui.g.fillRect(ui._windowW - 1, 0, 1, ui._windowH);
+			g2_set_color(ui.t.SEPARATOR_COL);
+			g2_fill_rect(0, 0, 1, ui._window_h);
+			g2_fill_rect(ui._window_w - 1, 0, 1, ui._window_h);
 
 			// Draw tabs
 			for (let draw of UIBase.hwndTabs[TabArea.TabStatus]) draw(UIBase.htabs[TabArea.TabStatus]);
@@ -39,12 +39,12 @@ class UIStatus {
 		}
 	}
 
-	static drawVersionTab = (htab: Handle) => {
+	static drawVersionTab = (htab: zui_handle_t) => {
 		// Version label
 		if (!Config.raw.touch_ui) {
 			let ui = UIBase.ui;
 			ui.enabled = false;
-			ui.tab(UIBase.htabs[TabArea.TabStatus], manifest_version);
+			zui_tab(UIBase.htabs[TabArea.TabStatus], manifest_version);
 			ui.enabled = true;
 		}
 	}
